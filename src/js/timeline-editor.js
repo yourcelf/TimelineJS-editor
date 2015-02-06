@@ -17,20 +17,18 @@ window.mhtEditor = function(opts) {
   var Fluxible = require('fluxible');
   var goog = require("./goog");
   var Main = require('./components/main.jsx');
-  var authorizeAction = require("./actions/authorize");
+  var authorizeAction = require("./actions").authorize;
 
   var app = new Fluxible({appComponent: Main});
   app.registerStore(require("./stores/user"));
   app.registerStore(require("./stores/spreadsheet"));
   var context = app.createContext();
 
-  React.render(
-    React.createElement(Main, {context: context.getComponentContext()}),
-    options.div
-  );
-
-  context.executeAction(authorizeAction, function(err) {
-    if (err) throw err;
+  // Initialize authorization state with google.
+  context.executeAction(authorizeAction, {}, function() {
+    React.render(
+      React.createElement(Main, {context: context.getComponentContext()}),
+      options.div
+    );
   });
-
 };

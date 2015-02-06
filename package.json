@@ -37,6 +37,7 @@
     "gulp-util": "^3.0.2",
     "lodash": "^3.0.1",
     "react": "^0.12.2",
+    "superagent": "^0.21.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.0.0"
   }

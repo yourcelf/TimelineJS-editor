@@ -1,20 +1,13 @@
 var createStore = require("fluxible/utils/createStore");
 var goog = require("../goog");
 var _ = require("lodash");
+var utils = require("../utils")
 
-var lsGet = function(key, defaultValue) {
-  var val = window.localStorage && localStorage.getItem(key);
-  return typeof val === "undefined" ? defaultValue : val;
-};
-var lsSet = function(key, val) {
-  window.localStorage && localStorage.setItem(key, val);
-  return val;
-};
 var SpreadsheetStore = createStore({
   storeName: "SpreadsheetStore",
   initialize: function() {
-    this.spreadsheetId = lsGet("mhtSpreadsheetId", null);
-    this.rows = lsGet("mhtSpreadsheetRows", []);
+    this.spreadsheetId = utils.lsGet("mhtSpreadsheetId", null);
+    this.rows = utils.lsGet("mhtSpreadsheetRows", [], {json: true});
     if (this.hasSpreadsheet()) {
       this._fetchRows();
     }
@@ -26,7 +19,7 @@ var SpreadsheetStore = createStore({
         this.emitChange();
       } else {
         this.rows = rows;
-        lsSet("mhtSpreadsheetRows", rows);
+        utils.lsSet("mhtSpreadsheetRows", rows, {json: true});
         this.emitChange();
       }
     }.bind(this));
@@ -36,11 +29,18 @@ var SpreadsheetStore = createStore({
   },
   handlers: {
     "EDIT_SPREADSHEET": "handleEditSpreadsheet",
-    "SET_SPREADSHEET": "handleSetId"
+    "SET_SPREADSHEET": "handleSetId",
+    "UNSET_SPREADSHEET": "handleUnsetSpreadsheet"
   },
-  handleSetId: function(id) {
-    this.spreadsheetId = lsSet("mhtSpreadsheetId", id);
-    this.rows = lsSet("mhtSpreadsheetRows", []);
+  handleUnsetSpreadsheet: function(data) {
+    this.spreadsheetId = utils.lsSet("mhtSpreadsheetId", "");
+    this.rows = utils.lsSet("mhtSpreadsheetRows", []);
+    this.emitChange();
+  },
+  handleSetId: function(data) {
+    console.log(data);
+    this.spreadsheetId = utils.lsSet("mhtSpreadsheetId", data.id);
+    this.rows = utils.lsSet("mhtSpreadsheetRows", this.rows);
     this.emitChange();
     this._fetchRows();
   },
@@ -48,7 +48,7 @@ var SpreadsheetStore = createStore({
     switch (props.action) {
       case "ADD_ROW":
         this.rows.push(props.row);
-        lsSet("mhtSpreadsheetRows", rows);
+        utils.lsSet("mhtSpreadsheetRows", rows);
         this.emitChange();
         goog.addSpreadsheetRow(this.spreadsheetId, props.row, function(err) {
           if (err) {
@@ -59,7 +59,7 @@ var SpreadsheetStore = createStore({
         break;
       case "DELETE_ROW":
         this.rows.splice(props.rowNum, 1);
-        lsSet("mhtSpreadsheetRows", rows);
+        utils.lsSet("mhtSpreadsheetRows", rows);
         this.emitChange();
         goog.removeSpreadsheetRow(this.spreadsheetId, props.rowNum, function(err) {
           if (err) {
@@ -70,7 +70,7 @@ var SpreadsheetStore = createStore({
         break;
       case "CHANGE_ROW":
         this.rows.splice(props.rowNum, 1, props.row);
-        lsSet("mhtSpreadsheetRows", rows);
+        utils.lsSet("mhtSpreadsheetRows", rows);
         this.emitChange();
         goog.editSpreadsheetRow(this.spreadsheetId, props.rowNum, props.row, function(err) {
           if (err) {

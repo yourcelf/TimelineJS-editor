@@ -1,5 +1,5 @@
 var React = require("react");
-var authorizeAction = require("../actions/authorize");
+var authorizeAction = require("../actions").authorize;
 var goog = require("../goog");
 
 var Login = React.createClass({

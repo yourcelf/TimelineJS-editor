@@ -1,12 +1,15 @@
 var createStore = require("fluxible/utils/createStore");
+var utils = require("../utils");
+
 var UserStore = createStore({
   initialize: function() {
-    this.token = null;
+    this.token = utils.lsGet("mhtAuthToken", null, {json: true});
   },
   storeName: 'UserStore',
   handlers: {'AUTHORIZE': 'handleLogin'},
   handleLogin: function(params) {
     this.token = params.token;
+    utils.lsSet("mhtAuthToken", this.token, {json: true});
     this.emitChange();
   },
   isLoggedIn: function() {

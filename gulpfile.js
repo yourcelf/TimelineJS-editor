@@ -46,7 +46,7 @@ gulp.task('html', function() {
     .pipe(gulp.dest(DEST));
 });
 
-gulp.task('watch', function() {
+gulp.task('watch', ['build'], function() {
   browserSync({
     server: {baseDir: DEST, https: true},
     port: 8000,

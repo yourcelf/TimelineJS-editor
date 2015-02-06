@@ -1,13 +1,23 @@
 var utils = require("./utils");
 var options = require("./options");
+var request = require("superagent");
+var _ = require("lodash");
 
-// Google config:
-var GOOGLE_OAUTH_URL = "https://accounts.google.com/o/oauth2/auth";
-var GOOGLE_VALIDATION_URL = "https://www.googleapis.com/oauth2/v1/tokeninfo";
-var GOOGLE_SCOPES = [
+var URLS = {
+  'oauth': "https://accounts.google.com/o/oauth2/auth",
+  'worksheetFeed': 'https://spreadsheets.google.com/feeds/worksheets/SPREADSHEET_ID/private/full',
+  'rowsFeed': 'https://spreadsheets.google.com/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full'
+}
+var SCOPES = [
   "https://www.googleapis.com/auth/drive",
   "https://spreadsheets.google.com/feeds"
 ];
+
+var COLUMNS = [
+  "startdate", "enddate", "headline", "text",
+  "media", "mediacredit", "mediathumbnail",
+  "type", "tag"
+]
 
 module.exports.bootstrap = function(callback) {
   // Load the gapi script.
@@ -32,7 +42,7 @@ module.exports.bootstrap = function(callback) {
 module.exports.authorize = function(callback) {
   gapi.auth.authorize({
     "client_id": options.clientId,
-    "scope": GOOGLE_SCOPES.join(" "),
+    "scope": SCOPES.join(" "),
     "immediate": true
   }, function(authResult) {
     console.log(authResult && authResult.error);
@@ -49,8 +59,8 @@ module.exports.popupLogin = function(callback) {
   var e = encodeURIComponent
   var redirectUri = document.URL +
     (document.URL.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
-  var oauthUrl = GOOGLE_OAUTH_URL +
-      "?scope=" + e(GOOGLE_SCOPES.join(" ")) +
+  var oauthUrl = URLS.oauth +
+      "?scope=" + e(SCOPES.join(" ")) +
       "&redirect_uri=" + e(redirectUri) +
       "&client_id=" + e(options.clientId) +
       "&response_type=token";
@@ -84,21 +94,64 @@ module.exports.popupLogin = function(callback) {
   }, 100);
 };
 
-module.exports.duplicateTemplate = function() {
+module.exports.duplicateTemplate = function(title, callback) {
   gapi.client.load('drive', 'v2', function() {
     var req = gapi.client.drive.files.copy({
-      fileId: TIMELINE_JS_TEMPLATE_ID,
+      fileId: options.templateId,
       resource: {
         "description": "Timeline JS template copy",
         "labels.restricted": false,
-        "parents": ["timelines"],
-        "title": "Timeline JS template copy " + new Date(),
+        "title": title,
         "writersCanShare": true
       }
     });
     req.execute(function(res) {
       console.log("Copy ID: ", res.id);
       console.log(res);
+      module.exports.publishSpreadsheet(res.id, function() {
+        callback(res);
+      });
+    });
+  });
+}
+
+module.exports.publishSpreadsheet = function(spreadsheetId, callback) {
+  gapi.client.load('drive', 'v2', function() {
+    var req = gapi.client.drive.revisions.update({
+      fileId: spreadsheetId,
+      revisionId: "head",
+      resource: {
+        published: true,
+        publishAuto: true
+      }
+    });
+    req.execute(callback);
+  });
+};
+
+module.exports.fetchSpreadsheet = function(spreadsheetId, callback) {
+  var token = gapi.auth.getToken();
+  var worksheetId = null;
+  var fmtUrl = function(url) {
+    return url
+      .replace("SPREADSHEET_ID", spreadsheetId)
+      .replace("WORKSHEET_ID", worksheetId) +
+        "?access_token=" + token.access_token + "&alt=json";
+  };
+  request.get(fmtUrl(URLS.worksheetFeed), function(res) {
+    var data = JSON.parse(res.text);
+    var parts = data.feed.entry[0].id.$t.split("/");
+    worksheetId = parts[parts.length - 1];
+    request.get(fmtUrl(URLS.rowsFeed), function(res) {
+      try {
+        var data = JSON.parse(res.text);
+        var rows = _.map(data.feed.entry, function(row) {
+          return _.map(COLUMNS, function(col) { return row["gsx$" + col].$t; });
+        });
+      } catch (e) {
+        return callback(e);
+      }
+      callback(null, rows);
     });
   });
 }
