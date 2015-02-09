@@ -131,6 +131,9 @@ module.exports.publishSpreadsheet = function(spreadsheetId, callback) {
 
 module.exports.fetchSpreadsheet = function(spreadsheetId, callback) {
   var token = gapi.auth.getToken();
+  if (!token) {
+    return callback(new Error("Not authenticated"))
+  }
   var worksheetId = null;
   var fmtUrl = function(url) {
     return url
@@ -140,8 +143,13 @@ module.exports.fetchSpreadsheet = function(spreadsheetId, callback) {
   };
   request.get(fmtUrl(URLS.worksheetFeed), function(res) {
     var data = JSON.parse(res.text);
+    // This is strange -- the value in "feed.entry[0].content" looks like the
+    // worksheet ID, but doesn't appear to function as it. (Is it the worksheet
+    // title?) The actual ID of the worksheet appears to only offered as a URL,
+    // with the id part the last componnet of the path.  Parse out the ID.
     var parts = data.feed.entry[0].id.$t.split("/");
     worksheetId = parts[parts.length - 1];
+    // Now that we have the worksheet ID, fetch the rows in the spreadsheet.
     request.get(fmtUrl(URLS.rowsFeed), function(res) {
       try {
         var data = JSON.parse(res.text);

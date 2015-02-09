@@ -18,14 +18,17 @@ var CreateTimeline = React.createClass({
     this.setState({title: event.target.value});
   },
   render: function() {
-    var disabled = this.state.disableForm ? "disabled" : "";
-    return (
-      <form onSubmit={this.handleSubmit} disabled={disabled}>
-        <input type='text' name='title' placeholder='Timeline title'
-          value={this.state.title} onChange={this.handleTitleChange} required />
-        <button type='submit' className='mht-copy-template'>Create Timeline</button>
-      </form>
-    );
+    if (this.state.disableForm) {
+      return <div>Creating timeline... <img src='https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/css/loading.gif?v3.4' /></div>
+    } else {
+      return (
+        <form onSubmit={this.handleSubmit}>
+          <input type='text' name='title' placeholder='Timeline title'
+            value={this.state.title} onChange={this.handleTitleChange} required />
+          <button type='submit' className='mht-copy-template'>Create Timeline</button>
+        </form>
+      );
+    }
   }
 });
 
