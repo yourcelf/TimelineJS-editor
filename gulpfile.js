@@ -8,6 +8,7 @@ var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var uglify = require('gulp-uglify');
 var less = require('gulp-less');
+var cssimport = require('gulp-cssimport');
 var gutil = require('gulp-util');
 var sourcemaps = require("gulp-sourcemaps");
 var del = require('del');
@@ -35,10 +36,17 @@ gulp.task('js', function() {
 });
 
 gulp.task('css', function() {
-  return gulp.src('src/**/*.less')
+  return gulp.src(['src/**/*.less'])
     .pipe(less())
+    .pipe(cssimport())
     .pipe(gulp.dest(DEST))
     .pipe(browserSync.reload({stream: true}))
+});
+
+gulp.task('fonts', function() {
+  return gulp.src([
+      'bower_components/font-awesome/fonts/*'
+    ]).pipe(gulp.dest(DEST + "fonts/"));
 });
 
 gulp.task('html', function() {
@@ -57,6 +65,6 @@ gulp.task('watch', ['build'], function() {
   gulp.watch(['src/**/*.less'], ['css']);
 });
 
-gulp.task('build', ['css', 'html', 'js']);
+gulp.task('build', ['css', 'html', 'js', 'fonts']);
 gulp.task('default', ['build']);
 

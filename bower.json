@@ -1,0 +1,22 @@
+{
+  "name": "TimelineJS-editor",
+  "version": "0.0.0",
+  "homepage": "https://github.com/yourcelf/TimelineJS-editor",
+  "authors": [
+    "Charlie DeTar <cfd@media.mit.edu>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "skeleton": "~2.0.4",
+    "pikaday": "~1.3.1",
+    "font-awesome": "~4.3.0"
+  }
+}

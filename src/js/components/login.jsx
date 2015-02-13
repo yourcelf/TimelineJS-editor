@@ -4,7 +4,7 @@ var goog = require("../goog");
 
 var Login = React.createClass({
   handleClick: function() {
-    goog.popupLogin(function(err, token) {
+    goog.popupLogin().then(function(token) {
       this.props.context.executeAction(authorizeAction, {token: token});  
     }.bind(this));
   },

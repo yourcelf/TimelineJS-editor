@@ -1,5 +1,7 @@
 module.exports = {
-  redirectParam: "oauth2callback",
   // Default TimelineJS template
+  redirectParam: "oauth2callback",
+  timelineParam: "timeline",
+  editParam: "edit",
   templateId: "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE"
 }
