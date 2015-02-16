@@ -1,12 +1,12 @@
 var utils = require("./utils");
 var options = require("./options");
-var request = require("superagent");
+var superagent = require("superagent");
 var _ = require("lodash");
 
 var URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': 'https://spreadsheets.google.com/feeds/worksheets/SPREADSHEET_ID/private/full',
-  'rowsFeed': 'https://spreadsheets.google.com/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full'
+  'rowsFeed': 'https://spreadsheets.google.com/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
 }
  
 
@@ -90,11 +90,15 @@ module.exports.authorize = function() {
  * @return {Promise} A promise which resolves with the auth token once the user
  * has logged in.
  */
-module.exports.popupLogin = function() {
+module.exports.popupLogin = function(redirectUriBase) {
   return new Promise(function(resolve, reject) {
     var e = encodeURIComponent
-    var redirectUri = document.URL +
-      (document.URL.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
+    console.log(redirectUriBase);
+    redirectUriBase = redirectUriBase || document.URL;
+    var redirectUri = redirectUriBase +
+      (redirectUriBase.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
+    console.log(redirectUri);
+    
     var oauthUrl = URLS.oauth +
         "?scope=" + e(SCOPES.join(" ")) +
         "&redirect_uri=" + e(redirectUri) +
@@ -238,6 +242,8 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
 }
 
 // Attempt to parse a date of whatever format seen in a google spreadsheet.
+// Note that this will raise a warning from moment as it falls back to ``new
+// Date`` as a constructor.  This is OK.
 var parseDate = function(str) {
   if (!(str.trim && str.trim())) {
     return null;
@@ -258,50 +264,132 @@ var parseDate = function(str) {
  *
  * @param {string} spreadsheetId - The ID of the spreadsheet to retrieve.
  * @return {Promise} A promise which resolves with an object containing:
- * ``{rows: {Array}, worksheetId: {string}, permissions: {object}``
+ * ``{rows: {Array}, worksheetId: {string}, title: {string}, permissions: {object}``
  */
 module.exports.fetchSpreadsheet = function(spreadsheetId) {
-  return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
-    if (!token) {
-      return reject(new Error("Not authenticated"))
-    }
-    var worksheetId = null;
-    var title = null;
-    var fmtUrl = function(url) {
-      return url
-        .replace("SPREADSHEET_ID", spreadsheetId)
-        .replace("WORKSHEET_ID", worksheetId) +
-          "?access_token=" + token.access_token + "&alt=json";
-    };
-    request.get(fmtUrl(URLS.worksheetFeed), function(res) {
-      var data = JSON.parse(res.text);
-      // This is strange -- the value in "feed.entry[0].content" looks like the
-      // worksheet ID, but doesn't appear to function as it. (Is it the worksheet
-      // title?) The actual ID of the worksheet appears to only offered as a URL,
-      // with the id part the last componnet of the path.  Parse out the ID.
-      console.log("worksheetFeed:", data);
-      var parts = data.feed.entry[0].id.$t.split("/");
-      worksheetId = parts[parts.length - 1];
-      title = data.feed.title.$t;
+  var data = {};
+  return module.exports.getFilePermissions(spreadsheetId).then(function(perms) {
+    return module.exports.getWorksheetInfo(spreadsheetId);
+  }).then(function(worksheetInfo) {
+    _.extend(data, worksheetInfo);
+    return module.exports.getWorksheetRows(spreadsheetId, data.worksheetId);
+  }).then(function(rowInfo) {
+    _.extend(data, rowInfo); 
+    return data;
+  });
+};
 
-      // Now that we have the worksheet ID, fetch the rows in the spreadsheet.
-      request.get(fmtUrl(URLS.rowsFeed), function(res) {
-        try {
-          var data = JSON.parse(res.text);
-          console.log("rowsFeed:", data);
-          var rows = _.map(data.feed.entry, function(row) {
-            var rowObj = {};
-            _.each(COLUMNS, function(col) {
-              rowObj[col] = row["gsx$" + col].$t;
-            });
-            return rowObj;
-          });
-        } catch (e) {
-          return reject(e);
-        }
-        return resolve({rows: rows, worksheetId: worksheetId, title: title});
+/**
+ * Get the list of permissions for the given drive file.
+ *
+ * @param {string} fileId - The ID of the file for which to retrieve permissions.
+ * @return {Promise} A promise which resolves with an object containing:
+ * ``{permissions: {Object}}``
+ */
+module.exports.getFilePermissions = function(fileId) {
+  return new Promise(function(resolve, reject) {
+    gapi.client.load("drive", "v2", function() {
+      var req = gapi.client.drive.permissions.list({'fileId': fileId});
+      req.execute(function(res) {
+        return resolve({permissions: res.items});
       });
     });
   });
-}
+};
+
+/**
+ * Fetch the first worksheet ID and spreadsheet title for the given spreadsheet.
+ * @param {string} spreadsheetId - The ID of the spreadsheet to retrieve.
+ * @return {Promise} A promise which resolves with an object containing:
+ * ``{worksheetId: {string}, title: {string}}``
+ */
+module.exports.getWorksheetInfo = function(spreadsheetId) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    var url = URLS.worksheetFeed.replace("SPREADSHEET_ID", spreadsheetId) +
+        "?access_token=" + token.access_token + "&alt=json";
+
+    superagent.get(url, function(res) {
+      if (res.status !== 200) {
+        return reject(res);
+      }
+      try {
+        var data = JSON.parse(res.text);
+      } catch (e) {
+        return reject(e);
+      }
+      var parts = data.feed.entry[0].id.$t.split("/");
+      resolve({
+        worksheetId: parts[parts.length - 1],
+        title: data.feed.title.$t
+      });
+    });
+  });
+};
+
+/**
+ * Fetch the row data for the given worksheet.
+ * @param {string} spreadsheetId - the ID of the spreadsheet to retrieve.
+ * @param {string} worksheetId - the ID of the worksheet within that spreadsheet.
+ * @return {Promise} A promise which resolves with an object containing:
+ * ``{rows: {Array}}``
+ */
+module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    var url = URLS.rowsFeed
+        .replace("SPREADSHEET_ID", spreadsheetId)
+        .replace("WORKSHEET_ID", worksheetId) +
+        "?access_token=" + token.access_token + "&alt=json";
+    superagent.get(url, function(res) {
+      try {
+        var data = JSON.parse(res.text);
+        console.log("Raw rows:", data);
+        var rows = _.map(data.feed.entry, function(row) {
+          var rowObj = {};
+          _.each(COLUMNS, function(col) {
+            rowObj[col] = row["gsx$" + col].$t;
+            rowObj.id = row.id.$t;
+          });
+          return rowObj;
+        });
+      } catch (e) {
+        return reject(e);
+      }
+      return resolve({rows: rows});
+    });
+  });
+};
+
+
+module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    var resource = {id: rowData.id};
+    console.log(rowData);
+    _.each(COLUMNS, function(column) {
+      resource["gsx$" + column] = {$t: rowData[column] || ""};
+    });
+    console.log(resource);
+
+    // the "id" of a row as represented by Google is in fact the URL we need to
+    // PUT to alter the row.
+    var url = rowData.id + "?access_token=" + token.acces_token + "&alt=json";
+    superagent.put(url)
+      .set("Content-Type", "application/json")
+      .send(resource)
+      .end(function(err, res) {
+        console.log(err, res);
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res);
+      });
+  });
+};

@@ -2894,3 +2894,16 @@ http://nicolasgallagher.com/micro-clearfix-hack/
 .mht-timeline-editor input {
   max-width: 100%;
 }
+.mht-timeline-editor input.error {
+  border-color: #900;
+}
+.mht-timeline-editor .help-block {
+  display: block;
+  margin-top: -1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+  color: #aaa;
+}
+.mht-timeline-editor .help-block.error {
+  color: #900;
+}

@@ -28,8 +28,8 @@ var ReadTimeline = React.createClass({
   },
   render: function() {
     return <div>
-      <button onClick={this.handleNavEdit}>Edit Timeline</button> 
       <ShowEmbed context={this.props.context} />
+      <button onClick={this.handleNavEdit}>Edit Timeline</button> 
     </div>
   }
 });

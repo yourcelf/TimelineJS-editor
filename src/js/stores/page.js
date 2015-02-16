@@ -89,6 +89,9 @@ var PageStore = createStore({
       case "CREATE":
         remove = [options.timelineParam, options.editParam];
         break
+      case "OAUTH_REDIRECT_BASE":
+        remove = [options.timelineParam, options.editParam];
+        break
       default:
         return undefined;
     }

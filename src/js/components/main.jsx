@@ -23,13 +23,20 @@ var Main = React.createClass({
       page: this.getStore('PageStore').getPage(),
     }
   },
-  onChange: function() {
+  onChange: function(payload) {
     this.setState(this._getStateFromStores());
   },
   getInitialState: function() {
+    //XXX This shouldn't be necessary, but UserStore changes don't seem to
+    //propagate here otherwise???  Something weird going on with ``context``
+    //and registrations.
+    this.getStore("UserStore").on("change", function(payload) {
+      this.onChange(payload);
+    }.bind(this));
     return this._getStateFromStores();
   },
   render: function() {
+    console.log("Render main");
     var main;
     if (this.state.page === 'OAUTH_CALLBACK') {
       main = <em>Logging in...</em>;

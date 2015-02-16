@@ -3,13 +3,13 @@ var utils = require("../utils");
 
 var UserStore = createStore({
   initialize: function() {
-    this.token = utils.lsGet("mhtAuthToken", null);
+    this.token = null;
   },
   storeName: 'UserStore',
   handlers: {'AUTHORIZE': 'handleLogin'},
   handleLogin: function(params) {
     this.token = params.token;
-    utils.lsSet("mhtAuthToken", this.token);
+    console.log("UserStore change", this.isLoggedIn());
     this.emitChange();
   },
   isLoggedIn: function() {

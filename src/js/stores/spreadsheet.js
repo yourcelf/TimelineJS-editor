@@ -8,7 +8,7 @@ var options = require("../options");
 var SpreadsheetStore = createStore({
   storeName: "SpreadsheetStore",
   initialize: function() {
-    this._setData(utils.lsGet("mhtSpreadsheetData", {}));
+    this.data = {};
   },
   // State info
   getData: function() {
@@ -20,10 +20,9 @@ var SpreadsheetStore = createStore({
   hasError: function() {
     return !!this.error;
   },
-
   beginPolling: function() {
-    console.log("beginPolling"); //XXX
-    //this._fetchRows();
+    console.log("beginPolling");
+    this._fetchRows(); //XXX
     //this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
   },
   stopPolling: function() {
@@ -37,6 +36,7 @@ var SpreadsheetStore = createStore({
   },
 
   handleApiError: function(err) {
+    console.log("ERROR", err);
     this.error = err;
     this.emitChange();
   },
@@ -51,35 +51,34 @@ var SpreadsheetStore = createStore({
       this.emitChange();
     }
   },
-  handleEditSpreadsheet: function(props) {
-    switch (props.action) {
+  handleEditSpreadsheet: function(payload) {
+    switch (payload.action) {
       case "ADD_ROW":
-        this.data.rows.push(props.row);
+        this.data.rows.push(payload.row);
         this.emitChange();
         goog.addSpreadsheetRow(
-          this.spreadsheetId, props.row
+          this.spreadsheetId, payload.row
         ).catch(this.handleApiError.bind(this));
         break;
       case "DELETE_ROW":
-        this.data.rows.splice(props.rowNum, 1);
+        this.data.rows.splice(payload.rowNum, 1);
         goog.removeSpreadsheetRow(
-          this.spreadsheetId, props.rowNum
+          this.spreadsheetId, payload.rowNum
         ).catch(this.handleApiError.bind(this));
         break;
       case "CHANGE_ROW":
-        this.data.rows.splice(props.rowNum, 1, props.row);
+        this.data.rows.splice(payload.rowNum, 1, payload.row);
         goog.editSpreadsheetRow(
-          this.spreadsheetId, props.rowNum, props.row
+          this.spreadsheetId, this.data.worksheetId, payload.row 
         ).catch(this.handleApiError.bind(this));
         break;
       default:
-        throw new Error("Unknown action " + props.action);
+        throw new Error("Unknown action " + payload.action);
     }
     this.emitChange();
-    utils.lsSet("mhtSpreadsheetData", this.data);
   },
   _setData: function(data) {
-    this.data = utils.lsSet("mhtSpreadsheetData", data || {});
+    this.data = data;
     _.each(this.data.rows || [], function(row) {
       row.startdateObj = this._parseDate(row.startdate);
       row.enddateObj = this._parseDate(row.enddate);
@@ -102,15 +101,15 @@ var SpreadsheetStore = createStore({
   _fetchRows: function() {
     this.error = null;
     if (this.data.id) {
-      goog.fetchSpreadsheet(this.data.id).then(
-        function(data) {
+      goog.fetchSpreadsheet(this.data.id)
+        .then(function(data) {
           _.extend(this.data, data);
           this._setData(this.data);
           this.emitChange();
-        }.bind(this)
-      ).catch(this.handleApiError.bind(this));
+        }.bind(this))
+        .catch(this.handleApiError.bind(this));
     } else {
-      utils.lsSet("mhtSpreadsheetData", {});
+      this.data = {};
     }
   },
 });

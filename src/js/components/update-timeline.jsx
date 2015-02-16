@@ -44,7 +44,6 @@ var UpdateTimeline = React.createClass({
     this.setState(this._getStateFromStores());
   },
   componentWillMount: function() {
-    this.getStore("SpreadsheetStore")._fetchRows(); // XXX
     this.getStore("SpreadsheetStore").beginPolling();
   },
   componentWillUnmount: function() {
@@ -62,6 +61,9 @@ var UpdateTimeline = React.createClass({
       }
     }
     this.setState({focus: i});
+  },
+  handleAddRow: function() {
+
   },
   render: function() {
     var ps = this.getStore("PageStore");

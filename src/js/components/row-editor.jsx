@@ -7,7 +7,7 @@ var actions = require("../actions");
 
 var RowEditor = React.createClass({
   getInitialState: function() {
-    return _.extend({dirty: false}, this.props.row);
+    return _.extend({dirty: false, saving: false}, this.props.row);
   },
   inputProps: function(attr) {
     return {
@@ -33,11 +33,24 @@ var RowEditor = React.createClass({
   handleSubmit: function(event) {
     event.preventDefault();
     // Fire action for EDIT_SPREADSHEET_ROW. for this.props.row.
+    this.setState({saving: true});
+    var payload = {
+      action: "CHANGE_ROW",
+      row: {},
+      rowNum: this.props.rowIndex,
+      id: this.props.row.id
+    };
+    for (var key in this.props.row) {
+      payload.row[key] = this.state[key];
+    }
+    this.props.context.executeAction(actions.editSpreadsheet, payload);
   },
   render: function() {
-    var disableSubmit = this.state.dirty ? {} : {disabled: true};
+    var disableSubmit = {disabled: (this.state.saving ||
+                                    !this.state.dirty ||
+                                    !this.props.row.id)};
     return (
-      <form className='edit-row-form'>
+      <form className='edit-row-form' onSubmit={this.handleSubmit}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>
         <div className='row'>
           <div className='six columns'>
@@ -85,7 +98,10 @@ var RowEditor = React.createClass({
           <label>Tag</label>
           <input {...this.inputProps("tag")} type='text' className='u-full-width' />
         </div>
-        <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>Save</button>
+        <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
+          {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+          Save
+        </button>
       </form>
     );
   }
