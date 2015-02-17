@@ -52,6 +52,7 @@ var SpreadsheetStore = createStore({
     }
   },
   handleEditSpreadsheet: function(payload) {
+    console.log("handleEditSpreadsheet", payload);
     switch (payload.action) {
       case "ADD_ROW":
         this.data.rows.push(payload.row);
@@ -67,10 +68,20 @@ var SpreadsheetStore = createStore({
         ).catch(this.handleApiError.bind(this));
         break;
       case "CHANGE_ROW":
-        this.data.rows.splice(payload.rowNum, 1, payload.row);
+        console.log(payload);
         goog.editSpreadsheetRow(
           this.spreadsheetId, this.data.worksheetId, payload.row 
-        ).catch(this.handleApiError.bind(this));
+        ).then(function(row) {
+          console.log(row);
+          for (var i = 0; i < this.data.rows.length; i++) {
+            if (this.data.rows[i].id === row.id) {
+              this.data.rows[i] = row;
+              console.log(this.data.rows[i]);
+              break;
+            }
+          }
+          this.emitChange();
+        }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       default:
         throw new Error("Unknown action " + payload.action);

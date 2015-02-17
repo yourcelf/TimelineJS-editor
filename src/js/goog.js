@@ -351,43 +351,47 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
       try {
         var data = JSON.parse(res.text);
         console.log("Raw rows:", data);
-        var rows = _.map(data.feed.entry, function(row) {
-          var rowObj = {};
-          _.each(COLUMNS, function(col) {
-            rowObj[col] = row["gsx$" + col].$t;
-            rowObj.id = row.id.$t;
-            rowObj.editUrl = _.find(row.link, function(link) {
-              return link.rel === "edit";
-            }).href;
-          });
-          return rowObj;
-        });
+        return resolve({rows: _.map(data.feed.entry, _spreadsheetRowToObj)});
       } catch (e) {
         return reject(e);
       }
-      return resolve({rows: rows});
     });
   });
 };
 
+function _spreadsheetRowToObj(row) {
+  var rowObj = {};
+  COLUMNS.forEach(function(col) {
+    rowObj[col] = row["gsx$" + col].$t;
+  });
+  rowObj.id = row.id.$t;
+  rowObj._raw = row;
+  return rowObj;
+}
 
 module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
- 
+
     // Build XML resource.
     var columns = _.map(COLUMNS, function(column) {
       return "<gsx:" + column + ">" + (rowData[column] || "") + "</gsx:" + column + ">";
     }).join("\n");
-    var xmlResource = "<entry><id>" + rowData.id + "</id>" + columns + "</entry>";
+    var xmlResource = "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended' xmlns:gd='http://schemas.google.com/g/2005'>" +
+        "<id>" + rowData.id + "</id>" +
+        columns +
+      "</entry>";
 
-    // the "id" of a row as represented by Google is in fact the URL we need to
-    // PUT to alter the row.
-    var url = rowData.id;
+    // Find the edit URL.
+    console.log(rowData);
+    var url = _.find(rowData._raw.link, function(link) {
+      return link.rel === "edit";
+    }).href;
     // ... but we need to run it through our CORS proxy.
-    url = rowData.editUrl.replace(spreadsheetsBase, spreadsheetsProxyBase);
-    url += "?access_token=" + token.acces_token + "&alt=json";
+    url = url.replace(spreadsheetsBase, spreadsheetsProxyBase);
+    url += "?access_token=" + token.access_token + "&alt=json";
+    console.log(url);
     superagent.put(url)
       .set("content-type", "application/atom+xml")
       .send(xmlResource)
@@ -396,7 +400,8 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData
         if (err) {
           return reject(err);
         }
-        return resolve(res);
+        console.log(res.body.entry);
+        return resolve(_spreadsheetRowToObj(res.body.entry));
       });
   });
 };

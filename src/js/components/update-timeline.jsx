@@ -40,7 +40,8 @@ var UpdateTimeline = React.createClass({
   getInitialState: function() {
     return this._getStateFromStores();
   },
-  onChange: function() {
+  onChange: function(payload) {
+    // TODO: Reload iframe if payload is from spreadsheet store.
     this.setState(this._getStateFromStores());
   },
   componentWillMount: function() {
@@ -70,7 +71,6 @@ var UpdateTimeline = React.createClass({
     var rows = _.map(this.state.data.rows, function(row, i) {
       return <RowEditor
                 {...this.props}
-                row={row}
                 rowIndex={i}
                 key={"roweditor-" + i}
                 onFocus={this.handleFocusRow}

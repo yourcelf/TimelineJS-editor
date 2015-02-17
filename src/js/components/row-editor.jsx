@@ -1,13 +1,43 @@
 var _ = require("lodash");
 var React = require("react");
+var FluxibleMixin = require('fluxible').Mixin
 var DatePicker = require("./date-picker.jsx");
+var SpreadsheetStore = require("../stores/spreadsheet");
 
 var actions = require("../actions");
 
 
 var RowEditor = React.createClass({
+  mixins: [FluxibleMixin],
+  statics: {
+    storeListeners: [SpreadsheetStore]
+  },
+
   getInitialState: function() {
-    return _.extend({dirty: false, saving: false}, this.props.row);
+    return _.extend({}, this._getRowFromStore());
+  },
+
+  _getRowFromStore: function() {
+    var ss = this.getStore("SpreadsheetStore");
+    return ss.getData().rows[this.props.rowIndex];
+  },
+  onChange: function(payload) {
+    // mostly ignore onChange from SpreadsheetStore, except to use it as a
+    // trigger to check dirty state.
+    /*
+    var dirty = _.some(this._getRowFromStore(), function(val, key) {
+      if (val !== this.state[key]) {
+        console.log(this.props.rowIndex, val, this.state[key]);
+      }
+      return val !== this.state[key];
+    }.bind(this));
+    var update = {dirty: dirty};
+    if (!dirty && this.state.saving) {
+      update.saving = false;
+    }
+    console.log("update", update);
+    this.setState(update);
+    */
   },
   inputProps: function(attr) {
     return {
@@ -15,10 +45,10 @@ var RowEditor = React.createClass({
       name: attr,
       onChange: function(event) {
         if (event.target.value !== this.state[attr]) {
-          var obj = {dirty: true};
+          var obj = {}
           obj[attr] = event.target.value;
-          console.log("state update", obj);
           this.setState(obj);
+          this.onChange();
         }
       }.bind(this),
       onFocus: function() {
@@ -36,19 +66,12 @@ var RowEditor = React.createClass({
     this.setState({saving: true});
     var payload = {
       action: "CHANGE_ROW",
-      row: {},
-      rowNum: this.props.rowIndex,
-      id: this.props.row.id,
+      row: this.state
     };
-    for (var key in this.props.row) {
-      payload.row[key] = this.state[key];
-    }
     this.props.context.executeAction(actions.editSpreadsheet, payload);
   },
   render: function() {
-    var disableSubmit = {disabled: (this.state.saving ||
-                                    !this.state.dirty ||
-                                    !this.props.row.id)};
+    var disableSubmit = {disabled: false}; //(this.state.saving || !this.state.dirty || !this.state.id)};
     return (
       <form className='edit-row-form' onSubmit={this.handleSubmit}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>
@@ -100,6 +123,7 @@ var RowEditor = React.createClass({
         </div>
         <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
           {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+          {this.state.saving}
           Save
         </button>
       </form>
