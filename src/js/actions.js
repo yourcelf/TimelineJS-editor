@@ -14,6 +14,7 @@ module.exports.authorize = function(context, payload, done) {
     }).then(function(token) {
       finish(token);
     }).catch(function(err) {
+      console.log("actions.authorize", err);
       done && done(err);
     });
   }
@@ -29,4 +30,5 @@ module.exports.setSpreadsheetId = function(context, payload, done) {
 
 module.exports.navigate = function(context, payload, done) {
   context.dispatch("NAVIGATE", payload);
+  done && done();
 };

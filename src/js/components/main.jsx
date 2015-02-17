@@ -36,7 +36,7 @@ var Main = React.createClass({
     return this._getStateFromStores();
   },
   render: function() {
-    console.log("Render main");
+    console.log("Render main", this.state.page);
     var main;
     if (this.state.page === 'OAUTH_CALLBACK') {
       main = <em>Logging in...</em>;

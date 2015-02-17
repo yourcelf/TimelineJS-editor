@@ -3,5 +3,6 @@ module.exports = {
   redirectParam: "oauth2callback",
   timelineParam: "timeline",
   editParam: "edit",
-  templateId: "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE"
+  templateId: "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE",
+  spreadsheetsCorsProxy: "https://gspreadsheetscorsproxy.herokuapp.com"
 }

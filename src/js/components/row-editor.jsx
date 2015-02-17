@@ -38,7 +38,7 @@ var RowEditor = React.createClass({
       action: "CHANGE_ROW",
       row: {},
       rowNum: this.props.rowIndex,
-      id: this.props.row.id
+      id: this.props.row.id,
     };
     for (var key in this.props.row) {
       payload.row[key] = this.state[key];

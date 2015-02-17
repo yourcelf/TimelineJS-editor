@@ -3,12 +3,14 @@ var options = require("./options");
 var superagent = require("superagent");
 var _ = require("lodash");
 
+var spreadsheetsBase = "https://spreadsheets.google.com";
+var spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetBase;
+
 var URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
-  'worksheetFeed': 'https://spreadsheets.google.com/feeds/worksheets/SPREADSHEET_ID/private/full',
-  'rowsFeed': 'https://spreadsheets.google.com/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
+  'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
+  'rowsFeed': spreadsheetsProxyBase + '/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
 }
- 
 
 /** Authorization scopes for Google */
 var SCOPES = [
@@ -354,6 +356,9 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
           _.each(COLUMNS, function(col) {
             rowObj[col] = row["gsx$" + col].$t;
             rowObj.id = row.id.$t;
+            rowObj.editUrl = _.find(row.link, function(link) {
+              return link.rel === "edit";
+            }).href;
           });
           return rowObj;
         });
@@ -370,20 +375,22 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
-
-    var resource = {id: rowData.id};
-    console.log(rowData);
-    _.each(COLUMNS, function(column) {
-      resource["gsx$" + column] = {$t: rowData[column] || ""};
-    });
-    console.log(resource);
+ 
+    // Build XML resource.
+    var columns = _.map(COLUMNS, function(column) {
+      return "<gsx:" + column + ">" + (rowData[column] || "") + "</gsx:" + column + ">";
+    }).join("\n");
+    var xmlResource = "<entry><id>" + rowData.id + "</id>" + columns + "</entry>";
 
     // the "id" of a row as represented by Google is in fact the URL we need to
     // PUT to alter the row.
-    var url = rowData.id + "?access_token=" + token.acces_token + "&alt=json";
+    var url = rowData.id;
+    // ... but we need to run it through our CORS proxy.
+    url = rowData.editUrl.replace(spreadsheetsBase, spreadsheetsProxyBase);
+    url += "?access_token=" + token.acces_token + "&alt=json";
     superagent.put(url)
-      .set("Content-Type", "application/json")
-      .send(resource)
+      .set("content-type", "application/atom+xml")
+      .send(xmlResource)
       .end(function(err, res) {
         console.log(err, res);
         if (err) {

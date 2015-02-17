@@ -18,11 +18,12 @@ var CreateTimeline = React.createClass({
     event.preventDefault();
     if (this.state.title && !this.state.templateUrlError) {
       this.setState({disableForm: true});
+      var that = this;
       goog.duplicateTemplate("Timeline: " + this.state.title, this.state.templateId).then(function(res) {
-        this.props.context.executeAction(actions.setSpreadsheet, res);
-        this.props.context.executeAction(actions.navigate, {page: "UPDATE"});
-        this.setState({disableForm: false});
-      }.bind(this));
+        that.props.context.executeAction(actions.setSpreadsheetId, res.id);
+        that.props.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: res.id});
+        that.setState({disableForm: false});
+      });
     }
   },
   getInitialState: function() {
@@ -65,7 +66,7 @@ var CreateTimeline = React.createClass({
   },
   render: function() {
     if (this.state.disableForm) {
-      return <div>Creating timeline... <img src='https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/css/loading.gif?v3.4' /></div>
+      return <div>Creating timeline... <i className='fa fa-spinner fa-spin' /></div>
     } else {
       var templateUrlHelp = "";
       if (this.state.templateUrl === "") {
@@ -78,7 +79,7 @@ var CreateTimeline = React.createClass({
         templateUrlHelp = "Please paste the URL to a google spreadsheet or a timeline hosted on this site.";
       }
       return (
-        <div>
+        <div className="six columns">
           <h1>Create Timeline</h1>
           <form onSubmit={this.handleSubmit}>
             <div>
@@ -87,6 +88,7 @@ var CreateTimeline = React.createClass({
                      placeholder='Timeline title'
                      value={this.state.title}
                      onChange={this.handleTitleChange}
+                     className="u-full-width"
                      required />
             </div>
             <div>
@@ -95,7 +97,7 @@ var CreateTimeline = React.createClass({
                      placeholder='Template to copy'
                      value={this.state.templateUrl}
                      onChange={this.handleTemplateUrlChange}
-                     className={this.state.templateUrlError ? "error" : ""} />
+                     className={"u-full-width" + (this.state.templateUrlError ? " error" : "")} />
               <span className={'help-block' + (this.state.templateUrlError ? " error" : "")}>
                 {templateUrlHelp}
               </span>

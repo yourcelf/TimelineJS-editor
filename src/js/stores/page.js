@@ -9,7 +9,7 @@ var PageStore = createStore({
     this._setPageFromUrlParams();
   },
   storeName: 'PageStore',
-  handlers: {'NAVIGATE': 'handleNavigate'},
+  handlers: { 'NAVIGATE': 'handleNavigate' },
 
   /**
    * Respond to navigate actions, updating the current PAGE and pushing URL
@@ -18,7 +18,7 @@ var PageStore = createStore({
    * @param {object} payload - Object requiring one of ``page`` or ``href``
    * keys.  ``page`` should be one of "UPDATE", "READ", or "CREATE"
    */
-  handleNavigate: function handleNavigate(payload) {
+  handleNavigate: function(payload) {
     if (payload.page) {
       this.page = payload.page;
       this.urlParams[options.timelineParam] = payload.timelineId;
@@ -43,7 +43,6 @@ var PageStore = createStore({
       this.emitChange();
     }
   },
-
   _setPageFromUrlParams: function() {
     if (this.urlParams.hasOwnProperty(options.redirectParam)) {
       this.page = "OAUTH2_CALLBACK";

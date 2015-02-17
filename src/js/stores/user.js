@@ -9,7 +9,6 @@ var UserStore = createStore({
   handlers: {'AUTHORIZE': 'handleLogin'},
   handleLogin: function(params) {
     this.token = params.token;
-    console.log("UserStore change", this.isLoggedIn());
     this.emitChange();
   },
   isLoggedIn: function() {
