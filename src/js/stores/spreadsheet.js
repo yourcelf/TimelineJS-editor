@@ -9,6 +9,7 @@ var SpreadsheetStore = createStore({
   storeName: "SpreadsheetStore",
   initialize: function() {
     this.data = {};
+    this.setMaxListeners(15); // Suppress warnings about emitter leak
   },
   // State info
   getData: function() {
@@ -22,11 +23,14 @@ var SpreadsheetStore = createStore({
   },
   beginPolling: function() {
     console.log("beginPolling");
-    this._fetchRows(); //XXX
-    //this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
+    this._fetchRows();
+    this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
   },
   stopPolling: function() {
-    if (this._pollInterval) { clearInterval(this._pollInterval); }
+    console.log("stopPolling");
+    if (this._pollInterval) {
+      clearInterval(this._pollInterval);
+    }
   },
 
   // Handlers
@@ -54,21 +58,29 @@ var SpreadsheetStore = createStore({
   handleEditSpreadsheet: function(payload) {
     switch (payload.action) {
       case "ADD_ROW":
-        this.data.rows.push(payload.row);
         this.emitChange();
         goog.addSpreadsheetRow(
-          this.spreadsheetId, payload.row
-        ).catch(this.handleApiError.bind(this));
+          this.data.id, this.data.worksheetId, payload.row || {}
+        ).then(function(row) {
+          row._requestId = payload._requestId;
+          this.data.rows.push(row);
+          this._setData(this.data); // XXX this could be better...
+          this.emitChange();
+        }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       case "DELETE_ROW":
-        this.data.rows.splice(payload.rowNum, 1);
-        goog.removeSpreadsheetRow(
-          this.spreadsheetId, payload.rowNum
-        ).catch(this.handleApiError.bind(this));
+        goog.deleteSpreadsheetRow(
+          this.spreadsheetId, this.data.worksheetId, payload.row
+        ).then(function(res) {
+          this.data.rows = _.reject(this.data.rows, function(r) {
+            return r.id === payload.row.id;
+          });
+          this.emitChange();
+        }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       case "CHANGE_ROW":
         goog.editSpreadsheetRow(
-          this.spreadsheetId, this.data.worksheetId, payload.row 
+          this.data.id, this.data.worksheetId, payload.row 
         ).then(function(row) {
           for (var i = 0; i < this.data.rows.length; i++) {
             if (this.data.rows[i].id === row.id) {
@@ -76,6 +88,7 @@ var SpreadsheetStore = createStore({
               break;
             }
           }
+          this._setData(this.data); // XXX this could be better...
           this.emitChange();
         }.bind(this)).catch(this.handleApiError.bind(this));
         break;
@@ -85,7 +98,9 @@ var SpreadsheetStore = createStore({
     this.emitChange();
   },
   spreadsheetsDiffer: function(data1, data2) {
-    if (!!data1.rows !== !!data2.rows ||data1.rows.length !== data2.rows.length) {
+    var d1Falsy = !data1.rows;
+    var d2Falsy = !data2.rows;
+    if (d1Falsy !== d2Falsy || data1.rows.length !== data2.rows.length) {
       return true;
     } else if (!data1.rows) {
       return false;
@@ -98,20 +113,23 @@ var SpreadsheetStore = createStore({
     return false;
   },
   rowsDiffer: function(row1, row2) {
-    return _.some(row1, function(val, key) {
-      // Skip the '_raw' key which will have timestamps and won't play nice
-      // with "===".
-      if (key === "_raw") {
-        return false;
+    for (var key in row1) {
+      if (key.substring(0,1) === "_") {
+        continue;
       }
-      return val !== row2[key];
-    });
+      if (row1[key] !== row2[key]) {
+        return true;
+      }
+    }
+    return false;
   },
   _setData: function(data) {
     this.data = data;
     _.each(this.data.rows || [], function(row) {
-      row.startdateObj = this._parseDate(row.startdate);
-      row.enddateObj = this._parseDate(row.enddate);
+      row._meta = {
+        startdateObj: this._parseDate(row.startdate),
+        enddateObj: this._parseDate(row.enddate)
+      };
     }.bind(this));
     return this.data;
   },
@@ -129,10 +147,12 @@ var SpreadsheetStore = createStore({
     return null;
   },
   _fetchRows: function() {
+    console.log("fetch rows");
     this.error = null;
     if (this.data.id) {
       goog.fetchSpreadsheet(this.data.id)
         .then(function(data) {
+          console.log("rows fetched");
           _.extend(this.data, data);
           this._setData(this.data);
           this.emitChange();

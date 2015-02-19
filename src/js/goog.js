@@ -1,6 +1,7 @@
 var utils = require("./utils");
 var options = require("./options");
 var superagent = require("superagent");
+var moment = require("moment");
 var _ = require("lodash");
 
 var spreadsheetsBase = "https://spreadsheets.google.com";
@@ -363,33 +364,38 @@ function _spreadsheetRowToObj(row) {
     rowObj[col] = row["gsx$" + col].$t;
   });
   rowObj.id = row.id.$t;
-  rowObj._raw = row;
+  rowObj._version = _.find(row.link, function(l) { return l.rel === "edit"; }).href;
   return rowObj;
 }
 
-module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData) {
+function _columnXml(rowObj) {
+  return _.map(COLUMNS, function(column) {
+    return "<gsx:" + column + ">" + (rowObj[column] || "") + "</gsx:" + column + ">";
+  }).join("\n");
+}
+
+function _entryXml(contents) {
+  return "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended'>" + contents + "</entry>";
+}
+
+module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
     // Build XML resource.
-    var columns = _.map(COLUMNS, function(column) {
-      return "<gsx:" + column + ">" + (rowData[column] || "") + "</gsx:" + column + ">";
-    }).join("\n");
-    var xmlResource = "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended' xmlns:gd='http://schemas.google.com/g/2005'>" +
-        "<id>" + rowData.id + "</id>" +
-        columns +
-      "</entry>";
+    var columns = _columnXml(rowObj);
+    var xmlResource = _entryXml("<id>" + rowObj.id + "</id>" + columns);
 
     // Find the edit URL.
-    var url = _.find(rowData._raw.link, function(link) {
-      return link.rel === "edit";
-    }).href;
     // ... but we need to run it through our CORS proxy.
-    url = url.replace(spreadsheetsBase, spreadsheetsProxyBase);
-    url += "?access_token=" + token.access_token + "&alt=json";
+    var url = rowObj._version.replace(spreadsheetsBase, spreadsheetsProxyBase);
+    url += "?alt=json";
+
+
     superagent.put(url)
       .set("content-type", "application/atom+xml")
+      .set("Authorization", "Bearer " + token.access_token)
       .send(xmlResource)
       .end(function(err, res) {
         if (err) {
@@ -397,5 +403,59 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData
         }
         return resolve(_spreadsheetRowToObj(res.body.entry));
       });
+  });
+};
+
+module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    // We need at least one property to be non-blank
+    if (!rowObj.startdate) {
+      rowObj.startdate = moment().format('YYYY-MM-DD');
+    }
+    var columns = _columnXml(rowObj);
+    var xmlResource = _entryXml(columns);
+    var url = URLS.rowsFeed
+        .replace("SPREADSHEET_ID", spreadsheetId)
+        .replace("WORKSHEET_ID", worksheetId)
+        .replace(spreadsheetsBase, spreadsheetsProxyBase) +
+        "?alt=json";
+
+    console.log(url);
+    console.log(xmlResource);
+
+    superagent.post(url)
+      .set("content-type", "application/atom+xml")
+      .set("Authorization", "Bearer " + token.access_token)
+      .send(xmlResource)
+      .end(function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        console.log(res);
+        return resolve(_spreadsheetRowToObj(res.body.entry));
+      });
+  });
+};
+
+module.exports.deleteSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    var url = rowObj._version
+      .replace(spreadsheetsBase, spreadsheetsProxyBase) + "?&alt=json";
+    superagent.del(url)
+        .set("Authorization", "Bearer " + token.access_token)
+        .end(function(err, res) {
+          if (err) {
+            return reject(err);
+          }
+          console.log(res);
+          return resolve(res);
+        });
+
   });
 };

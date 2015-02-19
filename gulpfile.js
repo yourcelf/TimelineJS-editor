@@ -69,6 +69,8 @@ gulp.task('watch-jshint', ['jshint'], function() {
 gulp.task('watch', ['build'], function() {
   browserSync({
     server: {baseDir: DEST, https: true},
+    https: true,
+    ghostMode: false, 
     port: 8000,
     open: false
   });

@@ -43,6 +43,21 @@
     background-color: #eee;
     padding: 1em;
   }
+  // Animation for adding/removing rows
+  .edit-row-forms-enter {
+    opacity: 0.01;
+    transition: opacity .5s ease-in;
+    &.edit-row-forms-enter-active { opacity: 1; }
+  }
+  .edit-row-forms-leave {
+    opacity: 1;
+    transition: opacity .5s ease-in;
+    &.edit-row-forms-leave-active { opacity: 0.01; }
+  }
+
+  a.delete-link { color: #333; text-decoration: none; }
+  a.delete-link:hover { background-color: red; color: white }
+
   .button-primary[disabled] {
     background-color: #abb;
     border-color: #abb;
@@ -64,4 +79,5 @@
       color: #900;
     }
   }
+
 }

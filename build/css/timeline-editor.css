@@ -2887,6 +2887,28 @@ http://nicolasgallagher.com/micro-clearfix-hack/
   background-color: #eee;
   padding: 1em;
 }
+.mht-timeline-editor .edit-row-forms-enter {
+  opacity: 0.01;
+  transition: opacity 0.5s ease-in;
+}
+.mht-timeline-editor .edit-row-forms-enter.edit-row-forms-enter-active {
+  opacity: 1;
+}
+.mht-timeline-editor .edit-row-forms-leave {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
+.mht-timeline-editor .edit-row-forms-leave.edit-row-forms-leave-active {
+  opacity: 0.01;
+}
+.mht-timeline-editor a.delete-link {
+  color: #333;
+  text-decoration: none;
+}
+.mht-timeline-editor a.delete-link:hover {
+  background-color: red;
+  color: white;
+}
 .mht-timeline-editor .button-primary[disabled] {
   background-color: #abb;
   border-color: #abb;

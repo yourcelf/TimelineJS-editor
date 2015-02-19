@@ -4,5 +4,6 @@ module.exports = {
   timelineParam: "timeline",
   editParam: "edit",
   templateId: "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE",
-  spreadsheetsCorsProxy: "https://gspreadsheetscorsproxy.herokuapp.com"
+  //spreadsheetsCorsProxy: "https://gspreadsheetscorsproxy.herokuapp.com"
+  spreadsheetsCorsProxy: "https://localhost:5000"
 };

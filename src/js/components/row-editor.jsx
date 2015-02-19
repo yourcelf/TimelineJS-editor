@@ -14,36 +14,60 @@ var RowEditor = React.createClass({
   },
 
   getInitialState: function() {
-    return _.extend({}, this._getRowFromStore());
+    this.ss = this.getStore("SpreadsheetStore")
+    return {row: _.extend({}, this._getRowFromStore())};
   },
 
   _getRowFromStore: function() {
-    var ss = this.getStore("SpreadsheetStore");
-    return ss.getData().rows[this.props.rowIndex];
+    return this.ss.getData().rows[this.props.rowIndex];
   },
   onChange: function(payload) {
-    // mostly ignore onChange from SpreadsheetStore, except to use it as a
-    // trigger to check dirty state.
+    // If upstream data has changed, check whether our revision has changed.
+    // If it has, clobber the current state.
+    if (payload && payload.data && payload.data.rows) {
+      var row = _.find(payload.data.rows, function(r) {
+        return r.id === this.state.row.id;
+      }.bind(this));
+      if (row) {
+        if (row._version !== this.state.row._version) {
+          this.setState({row: row});
+        }
+      } else {
+        // This row has been deleted upstream... we should no longer be rendering.
+        console.log("OH NOES Deleted upstream??");
+      }
+    }
+    // Do on next tick so that if we just clobbered state, dirty check still works.
+    setTimeout(function() {
+      this.checkDirty();
+    }.bind(this), 1);
+  },
+  checkDirty: function() {
+    // Check if the current state differs from that stored in the
+    // SpreadsheetStore.
     var storeRow = this._getRowFromStore();
-    var ss = this.getStore("SpreadsheetStore");
-    var dirty = ss.rowsDiffer(storeRow, this.state);
+    var dirty = this.ss.rowsDiffer(storeRow, this.state.row);
     var update = {dirty: dirty};
     if (!dirty && this.state.saving) {
       update.saving = false;
     }
     this.setState(update);
   },
-  inputProps: function(attr) {
+  getInputProps: function(attr) {
+    // Return the properties for an input in our form, based on the given
+    // column name.
     return {
-      value: this.state[attr],
+      value: this.state.row[attr],
       name: attr,
       onChange: function(event) {
-        if (event.target.value !== this.state[attr]) {
-          var obj = {}
-          obj[attr] = event.target.value;
-          this.setState(obj);
-          // Trigger onChange to update dirty state.
-          setTimeout(function() { this.onChange(); }.bind(this), 1);
+        // Handle change of an input: set the state, and check dirty.
+        if (event.target.value !== this.state.row[attr]) {
+          var newRow = _.extend({}, this.state.row);
+          newRow[attr] = event.target.value;
+          this.setState({row: newRow});
+          // Trigger onChange to update dirty state.  Run on next tick to
+          // ensure that the state update has finished.
+          setTimeout(function() { this.checkDirty(); }.bind(this), 1);
         }
       }.bind(this),
       onFocus: function() {
@@ -59,70 +83,88 @@ var RowEditor = React.createClass({
     event.preventDefault();
     // Fire action for EDIT_SPREADSHEET_ROW, sending changes in this.state.row.
     this.setState({saving: true});
-    var payload = {
-      action: "CHANGE_ROW",
-      row: this.state
-    };
+    var payload = {action: "CHANGE_ROW", row: this.state.row};
     this.props.context.executeAction(actions.editSpreadsheet, payload);
+  },
+  handleDelete: function(event) {
+    event.preventDefault();
+    if (confirm("Are you sure you want to delete this entry?")) {
+      var payload = {action: "DELETE_ROW", row: this.state.row};
+      this.props.context.executeAction(actions.editSpreadsheet, payload);
+    }
   },
   render: function() {
     var disableSubmit = {
-      disabled: (this.state.saving || !this.state.dirty || !this.state.id)
+      disabled: (this.state.saving || !this.state.dirty || !this.state.row.id)
     };
     return (
-      <form className='edit-row-form' onSubmit={this.handleSubmit}>
+      <form className='edit-row-form'
+            onSubmit={this.handleSubmit}
+            data-row-id={this.state.row.id}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>
         <div className='row'>
           <div className='six columns'>
             <label>Start Date</label>
-            <DatePicker {...this.inputProps("startdate")}
-              value={this.state.startdateObj && this.state.startdateObj.format("YYYY-MM-DD")}
+            <DatePicker {...this.getInputProps("startdate")}
+              value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
               />
           </div>
           <div className='six columns'>
             <label>End Date</label>
-            <DatePicker {...this.inputProps("enddate")}
-              value={this.state.enddateObj && this.state.enddateObj.format("YYYY-MM-DD")}
+            <DatePicker {...this.getInputProps("enddate")}
+              value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
               />
           </div>
         </div>
         <div>
           <label>Headline</label>
-          <input {...this.inputProps("headline")} type='text' className='u-full-width' />
+          <input {...this.getInputProps("headline")} type='text' className='u-full-width' />
         </div>
         <div>
           <label>Text</label>
-          <textarea {...this.inputProps("text")} rows='4' cols='40' className='u-full-width'/>
+          <textarea {...this.getInputProps("text")} rows='4' cols='40' className='u-full-width'/>
         </div>
         <div>
           <label>Media</label>
-          <input {...this.inputProps("media")} type='url' className='u-full-width' />
+          <input {...this.getInputProps("media")} type='url' className='u-full-width' />
         </div>
         <div>
           <label>Media Credit</label>
-          <input {...this.inputProps("mediacredit")} type='text' className='u-full-width' />
+          <input {...this.getInputProps("mediacredit")} type='text' className='u-full-width' />
         </div>
         <div>
           <label>Media Thumbnail URL</label>
-          <input {...this.inputProps("mediathumbnail")} type='url' className='u-full-width' />
+          <input {...this.getInputProps("mediathumbnail")} type='url' className='u-full-width' />
         </div>
-        <div>
-          <label>
-            Title slide{' '}
-            <input value='title' name='type' type='checkbox'
-              checked={this.state.type === 'title'}
-              onChange={this.handleTitleTypeChange} />
-          </label>
+        <div className='row'>
+          <div className='four columns'>
+            <label>
+              Title slide{' '}
+              <input value='title' name='type' type='checkbox'
+                checked={this.state.row.type === 'title'}
+                onChange={this.handleTitleTypeChange} />
+            </label>
+          </div>
+          <div className='eight columns'>
+            <label>
+                Tag{' '}
+                <input {...this.getInputProps("tag")} type='text' />
+            </label>
+          </div>
         </div>
-        <div>
-          <label>Tag</label>
-          <input {...this.inputProps("tag")} type='text' className='u-full-width' />
+        <div className='row'>
+          <div className='six columns'>
+            <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
+              {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+              {this.state.saving}
+              Save
+            </button>
+          </div>
+          <div className='six columns'>
+            <a className='u-pull-right button delete-link' href='#'
+              onClick={this.handleDelete}>Delete</a>
+          </div>
         </div>
-        <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
-          {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
-          {this.state.saving}
-          Save
-        </button>
       </form>
     );
   }
