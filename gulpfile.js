@@ -10,7 +10,8 @@ var uglify = require('gulp-uglify');
 var less = require('gulp-less');
 var cssimport = require('gulp-cssimport');
 var gutil = require('gulp-util');
-var sourcemaps = require("gulp-sourcemaps");
+var sourcemaps = require('gulp-sourcemaps');
+var jshint = require('gulp-jshint');
 var del = require('del');
 
 var NAME = require('./package.json').name;
@@ -52,6 +53,17 @@ gulp.task('fonts', function() {
 gulp.task('html', function() {
   return gulp.src('./src/index.html')
     .pipe(gulp.dest(DEST));
+});
+
+gulp.task('jshint', function() {
+  return gulp.src('src/**/*.js')
+    .pipe(jshint())
+    .pipe(jshint.reporter('default'));
+
+});
+
+gulp.task('watch-jshint', ['jshint'], function() {
+  gulp.watch(['src/**/*.js'], ['jshint']);
 });
 
 gulp.task('watch', ['build'], function() {

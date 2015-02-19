@@ -22,9 +22,12 @@ var UpdateTimeline = React.createClass({
     if (ss.getData().id !== ps.getTimelineId()) {
       this.props.context.executeAction(actions.setSpreadsheetId, ps.getTimelineId());
     }
+    // Shallow copy the data/rows so we can do change comparison.
+    var data = _.clone(ss.getData());
+    data.rows = _.clone(data.rows);
     return {
       timelineId: ps.getTimelineId(),
-      data: ss.getData()
+      data: data 
     }
   },
   getLink: function(dest) {
@@ -41,8 +44,22 @@ var UpdateTimeline = React.createClass({
     return this._getStateFromStores();
   },
   onChange: function(payload) {
-    // TODO: Reload iframe if payload is from spreadsheet store.
+    // Detect whether we've changed, and should reload the iframe.
+    var ss = this.getStore("SpreadsheetStore");
+    var dirty = false;
+    if (this.state.data && payload.data && this.state.data.rows && payload.data.rows) {
+      dirty = ss.spreadsheetsDiffer(this.state.data, payload.data);
+    }
     this.setState(this._getStateFromStores());
+    if (dirty) {
+      this.reloadIframe();
+    }
+  },
+  reloadIframe: function() {
+    console.log("Reload iframe!");
+    var iframe = document.getElementById('timeline-preview');
+    var parts = iframe.src.split('#');
+    iframe.src = parts[0] + '&_v#' + parts[1];
   },
   componentWillMount: function() {
     this.getStore("SpreadsheetStore").beginPolling();
@@ -106,7 +123,7 @@ var UpdateTimeline = React.createClass({
 
         </div>
         <div className='six columns preview-iframe-container'>
-          <iframe src={'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?source=' + this.state.timelineId + '&font=Bevan-PotanoSans&maptype=osm&lang=en&height=650#' + (this.state.focus ? this.state.focus : 0)} height='650' width='40%' frameBorder='0'></iframe>
+          <iframe id='timeline-preview' src={'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?source=' + this.state.timelineId + '&font=Bevan-PotanoSans&maptype=osm&lang=en&height=650#' + (this.state.focus ? this.state.focus : 0)} height='650' width='40%' frameBorder='0'></iframe>
         </div>
       </div>
     );

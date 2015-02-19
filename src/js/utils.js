@@ -17,11 +17,13 @@ module.exports.decodeParams = function(query) {
       decode = function (s) { return decodeURIComponent(s.replace(/\+/g, " ")); };
 
   var params = {};
+  /* jshint boss: true */
   while (match = search.exec(query)) {
      params[decode(match[1])] = decode(match[2]);
   }
+  /* jshint boss: false */
   return params;
-}
+};
 
 /**
  * Build a url querystring from the given key/value map.
@@ -60,7 +62,9 @@ module.exports.lsGet = function(key, defaultValue) {
  * @return {object|undefined} The given value parameter (for chaining).
  */
 module.exports.lsSet = function(key, val) {
-  window.localStorage && localStorage.setItem(key, JSON.stringify(val));
+  if (window.localStorage) {
+    localStorage.setItem(key, JSON.stringify(val));
+  }
   return val;
 };
 

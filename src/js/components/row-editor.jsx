@@ -24,20 +24,14 @@ var RowEditor = React.createClass({
   onChange: function(payload) {
     // mostly ignore onChange from SpreadsheetStore, except to use it as a
     // trigger to check dirty state.
-    /*
-    var dirty = _.some(this._getRowFromStore(), function(val, key) {
-      if (val !== this.state[key]) {
-        console.log(this.props.rowIndex, val, this.state[key]);
-      }
-      return val !== this.state[key];
-    }.bind(this));
+    var storeRow = this._getRowFromStore();
+    var ss = this.getStore("SpreadsheetStore");
+    var dirty = ss.rowsDiffer(storeRow, this.state);
     var update = {dirty: dirty};
     if (!dirty && this.state.saving) {
       update.saving = false;
     }
-    console.log("update", update);
     this.setState(update);
-    */
   },
   inputProps: function(attr) {
     return {
@@ -48,7 +42,8 @@ var RowEditor = React.createClass({
           var obj = {}
           obj[attr] = event.target.value;
           this.setState(obj);
-          this.onChange();
+          // Trigger onChange to update dirty state.
+          setTimeout(function() { this.onChange(); }.bind(this), 1);
         }
       }.bind(this),
       onFocus: function() {
@@ -62,7 +57,7 @@ var RowEditor = React.createClass({
   },
   handleSubmit: function(event) {
     event.preventDefault();
-    // Fire action for EDIT_SPREADSHEET_ROW. for this.props.row.
+    // Fire action for EDIT_SPREADSHEET_ROW, sending changes in this.state.row.
     this.setState({saving: true});
     var payload = {
       action: "CHANGE_ROW",
@@ -71,7 +66,9 @@ var RowEditor = React.createClass({
     this.props.context.executeAction(actions.editSpreadsheet, payload);
   },
   render: function() {
-    var disableSubmit = {disabled: false}; //(this.state.saving || !this.state.dirty || !this.state.id)};
+    var disableSubmit = {
+      disabled: (this.state.saving || !this.state.dirty || !this.state.id)
+    };
     return (
       <form className='edit-row-form' onSubmit={this.handleSubmit}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>

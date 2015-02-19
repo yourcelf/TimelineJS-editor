@@ -10,7 +10,7 @@ var URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
   'rowsFeed': spreadsheetsProxyBase + '/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
-}
+};
 
 /** Authorization scopes for Google */
 var SCOPES = [
@@ -39,7 +39,7 @@ module.exports.bootstrap = function() {
         window.gapiBootstrapCallback = null;
         resolve();
       };
-      var scripts = document.getElementsByTagName("script")
+      var scripts = document.getElementsByTagName("script");
       var curScript = scripts[scripts.length - 1];
       var gapiScript = document.createElement("script");
       gapiScript.src = "https://apis.google.com/js/client.js?onload=gapiBootstrapCallback";
@@ -48,7 +48,7 @@ module.exports.bootstrap = function() {
     } else {
       resolve();
     }
-  })
+  });
 };
 
 /**
@@ -68,7 +68,7 @@ module.exports.authorize = function() {
     }, function(authResult) {
       if (authResult) {
         if (authResult.error) {
-          console.log("auth: error:", authResult.error)
+          console.log("auth: error:", authResult.error);
         } else {
           console.log("auth: authenticated");
         }
@@ -83,7 +83,7 @@ module.exports.authorize = function() {
       }
     });
   });
-}
+};
 
 /**
  * Show a popup window which prompts the user to authorize their google account
@@ -94,12 +94,10 @@ module.exports.authorize = function() {
  */
 module.exports.popupLogin = function(redirectUriBase) {
   return new Promise(function(resolve, reject) {
-    var e = encodeURIComponent
-    console.log(redirectUriBase);
+    var e = encodeURIComponent;
     redirectUriBase = redirectUriBase || document.URL;
     var redirectUri = redirectUriBase +
       (redirectUriBase.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
-    console.log(redirectUri);
     
     var oauthUrl = URLS.oauth +
         "?scope=" + e(SCOPES.join(" ")) +
@@ -108,8 +106,9 @@ module.exports.popupLogin = function(redirectUriBase) {
         "&response_type=token";
     var win = window.open(oauthUrl);
     var pollTimer = setInterval(function() {
+      var popupUrl;
       try {
-        var popupUrl = win.document.URL;
+        popupUrl = win.document.URL;
       } catch (e) {
         // will throw error as long as the URL is on Google's domain.
         return;
@@ -160,7 +159,6 @@ module.exports.duplicateTemplate = function(title, templateId) {
         }
       });
       req.execute(function(res) {
-        console.log("spreadsheet", res);
         spreadsheetRes = res;
         resolve(res);
       });
@@ -172,7 +170,7 @@ module.exports.duplicateTemplate = function(title, templateId) {
   }).then(function() {
     return spreadsheetRes;
   });
-}
+};
 
 /**
  * Set a given spreadsheet to be "Published to the web", so that it can be
@@ -220,7 +218,7 @@ module.exports.addAnyoneCanEdit = function(spreadsheetId) {
       req.execute(resolve);
     });
   });
-}
+};
 /**
  * Remove "anyone can edit" permissions for the given spreadsheet by altering
  * the "anyone" role to "reader" status.
@@ -241,7 +239,7 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
       req.execute(resolve);
     });
   });
-}
+};
 
 // Attempt to parse a date of whatever format seen in a google spreadsheet.
 // Note that this will raise a warning from moment as it falls back to ``new
@@ -317,8 +315,9 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
       if (res.status !== 200) {
         return reject(res);
       }
+      var data;
       try {
-        var data = JSON.parse(res.text);
+        data = JSON.parse(res.text);
       } catch (e) {
         return reject(e);
       }
@@ -350,7 +349,6 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
     superagent.get(url, function(res) {
       try {
         var data = JSON.parse(res.text);
-        console.log("Raw rows:", data);
         return resolve({rows: _.map(data.feed.entry, _spreadsheetRowToObj)});
       } catch (e) {
         return reject(e);
@@ -384,23 +382,19 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowData
       "</entry>";
 
     // Find the edit URL.
-    console.log(rowData);
     var url = _.find(rowData._raw.link, function(link) {
       return link.rel === "edit";
     }).href;
     // ... but we need to run it through our CORS proxy.
     url = url.replace(spreadsheetsBase, spreadsheetsProxyBase);
     url += "?access_token=" + token.access_token + "&alt=json";
-    console.log(url);
     superagent.put(url)
       .set("content-type", "application/atom+xml")
       .send(xmlResource)
       .end(function(err, res) {
-        console.log(err, res);
         if (err) {
           return reject(err);
         }
-        console.log(res.body.entry);
         return resolve(_spreadsheetRowToObj(res.body.entry));
       });
   });

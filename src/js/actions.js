@@ -3,8 +3,8 @@ var goog = require("./goog");
 module.exports.authorize = function(context, payload, done) {
   var finish = function(token) {
     context.dispatch("AUTHORIZE", {token: token});
-    done && done();
-  }
+    if (done) { done(); }
+  };
 
   if (payload.token) {
     finish(payload.token);
@@ -15,20 +15,20 @@ module.exports.authorize = function(context, payload, done) {
       finish(token);
     }).catch(function(err) {
       console.log("actions.authorize", err);
-      done && done(err);
+      if (done) { done(err); }
     });
   }
 };
 module.exports.editSpreadsheet = function(context, payload, done) {
   context.dispatch("EDIT_SPREADSHEET", payload);
-  done && done();
+  if (done) { done(); }
 };
 module.exports.setSpreadsheetId = function(context, payload, done) {
   context.dispatch("SET_SPREADSHEET_ID", payload);
-  done && done();
+  if (done) { done(); }
 };
 
 module.exports.navigate = function(context, payload, done) {
   context.dispatch("NAVIGATE", payload);
-  done && done();
+  if (done) { done(); }
 };

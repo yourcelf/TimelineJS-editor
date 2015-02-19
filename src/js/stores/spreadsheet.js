@@ -26,7 +26,7 @@ var SpreadsheetStore = createStore({
     //this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
   },
   stopPolling: function() {
-    this._pollInterval && clearInterval(this._pollInterval);
+    if (this._pollInterval) { clearInterval(this._pollInterval); }
   },
 
   // Handlers
@@ -52,7 +52,6 @@ var SpreadsheetStore = createStore({
     }
   },
   handleEditSpreadsheet: function(payload) {
-    console.log("handleEditSpreadsheet", payload);
     switch (payload.action) {
       case "ADD_ROW":
         this.data.rows.push(payload.row);
@@ -68,15 +67,12 @@ var SpreadsheetStore = createStore({
         ).catch(this.handleApiError.bind(this));
         break;
       case "CHANGE_ROW":
-        console.log(payload);
         goog.editSpreadsheetRow(
           this.spreadsheetId, this.data.worksheetId, payload.row 
         ).then(function(row) {
-          console.log(row);
           for (var i = 0; i < this.data.rows.length; i++) {
             if (this.data.rows[i].id === row.id) {
               this.data.rows[i] = row;
-              console.log(this.data.rows[i]);
               break;
             }
           }
@@ -87,6 +83,29 @@ var SpreadsheetStore = createStore({
         throw new Error("Unknown action " + payload.action);
     }
     this.emitChange();
+  },
+  spreadsheetsDiffer: function(data1, data2) {
+    if (!!data1.rows !== !!data2.rows ||data1.rows.length !== data2.rows.length) {
+      return true;
+    } else if (!data1.rows) {
+      return false;
+    }
+    for (var i = 0; i < data1.rows.length; i++) {
+      if (this.rowsDiffer(data1.rows[i], data2.rows[i])) {
+        return true;
+      }
+    }
+    return false;
+  },
+  rowsDiffer: function(row1, row2) {
+    return _.some(row1, function(val, key) {
+      // Skip the '_raw' key which will have timestamps and won't play nice
+      // with "===".
+      if (key === "_raw") {
+        return false;
+      }
+      return val !== row2[key];
+    });
   },
   _setData: function(data) {
     this.data = data;
@@ -124,4 +143,4 @@ var SpreadsheetStore = createStore({
     }
   },
 });
-module.exports = SpreadsheetStore
+module.exports = SpreadsheetStore;
