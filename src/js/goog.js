@@ -11,12 +11,16 @@ var URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
   'rowsFeed': spreadsheetsProxyBase + '/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
+  'profile': 'https://www.googleapis.com/plus/v1/people/me',
+  'shortener': 'https://www.googleapis.com/urlshortener/v1/url'
 };
 
 /** Authorization scopes for Google */
 var SCOPES = [
   "https://www.googleapis.com/auth/drive",
-  "https://spreadsheets.google.com/feeds"
+  "https://spreadsheets.google.com/feeds",
+  "https://www.googleapis.com/auth/plus.me",
+  "https://www.googleapis.com/auth/urlshortener"
 ];
 
 /** Spreadsheet column names and order */
@@ -83,6 +87,48 @@ module.exports.authorize = function() {
         resolve(false);
       }
     });
+  });
+};
+
+module.exports.shortenUrl = function(longUrl) {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    superagent.post(URLS.shortener + "?access_token=" + token.access_token + "&alt=json")
+      .send({longUrl: longUrl})
+      .end(function(err, res) {
+        console.log(err, res);
+        if (err) {
+          return reject(err);
+        }
+        try {
+          var data = JSON.parse(res.text)
+          return resolve(data.id);
+        } catch (e) {
+          return reject(e);
+        }
+      });
+  });
+};
+
+module.exports.getUserProfile = function() {
+  return new Promise(function(resolve, reject) {
+    var token = gapi.auth.getToken();
+    if (!token) { return reject(new Error("Not authenticated")); }
+
+    superagent.get(URLS.profile + "?access_token=" + token.access_token + "&alt=json")
+      .end(function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        try {
+          var profile = JSON.parse(res.text);
+          return resolve(profile);
+        } catch (e) {
+          return reject(e);
+        }
+      });
   });
 };
 
@@ -411,7 +457,7 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
-    // We need at least one property to be non-blank
+    // We need at least one property to be non-blank.
     if (!rowObj.startdate) {
       rowObj.startdate = moment().format('YYYY-MM-DD');
     }
@@ -423,9 +469,6 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
         .replace(spreadsheetsBase, spreadsheetsProxyBase) +
         "?alt=json";
 
-    console.log(url);
-    console.log(xmlResource);
-
     superagent.post(url)
       .set("content-type", "application/atom+xml")
       .set("Authorization", "Bearer " + token.access_token)
@@ -434,7 +477,6 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
         if (err) {
           return reject(err);
         }
-        console.log(res);
         return resolve(_spreadsheetRowToObj(res.body.entry));
       });
   });
@@ -453,7 +495,6 @@ module.exports.deleteSpreadsheetRow = function(spreadsheetId, worksheetId, rowOb
           if (err) {
             return reject(err);
           }
-          console.log(res);
           return resolve(res);
         });
 

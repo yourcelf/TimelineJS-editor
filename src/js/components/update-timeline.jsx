@@ -1,20 +1,21 @@
 var _ = require("lodash");
+var moment = require("moment");
 var FluxibleMixin = require('fluxible').Mixin
 var React = require("react");
 var ReactCSSTransitionGroup = require("react/addons").addons.CSSTransitionGroup;
 
 var SpreadsheetStore = require("../stores/spreadsheet");
 var PageStore = require("../stores/page");
+var UserStore = require("../stores/user");
 var actions = require("../actions");
 
-var ShowEmbed = require("./show-embed.jsx");
 var SoftLink = require("./soft-link.jsx");
 var RowEditor = require("./row-editor.jsx");
 
 var UpdateTimeline = React.createClass({
   mixins: [FluxibleMixin],
   statics: {
-    storeListeners: [SpreadsheetStore, PageStore]
+    storeListeners: [SpreadsheetStore, PageStore, UserStore]
   },
   _getStateFromStores: function() {
     var ps = this.getStore("PageStore");
@@ -45,6 +46,11 @@ var UpdateTimeline = React.createClass({
     }
   },
   getInitialState: function() {
+    console.log("Shortening url");
+    this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
+      console.log("Url shortened:", shortUrl);
+      this.setState({shortUrl: shortUrl});
+    }.bind(this));
     return this._getStateFromStores();
   },
   onChange: function(payload) {
@@ -69,7 +75,6 @@ var UpdateTimeline = React.createClass({
             // Break closure for the row, and set timeout so we can wait till
             // the dom has repainted.
             (function(row) {
-              console.log("Match id:", row.id);
               setTimeout(function() {
                 document.querySelector("[data-row-id='" + row.id + "']").scrollIntoView();
               }, 1);
@@ -91,28 +96,35 @@ var UpdateTimeline = React.createClass({
   componentWillUnmount: function() {
     this.getStore("SpreadsheetStore").stopPolling();
   },
-  handleFocusRow: function(rowIndex) {
+  handleFocusRow: function(rowId) {
     // row index is in spreadsheet row order; but focus indices for the iframe
     // are in time order.  Sort the rows by date, and find the new index for
     // focusing.
-    var entry = this.state.data.rows[rowIndex];
     var sortedRows = _.sortBy(this.state.data.rows, function(r) {
       return r._meta.startdateObj;
     });
     for (var i = 0; i < sortedRows.length; i++) {
-      if (sortedRows[i] === entry) {
+      if (sortedRows[i].id === rowId) {
         break;
       }
     }
     this.setState({focus: i});
   },
+  handleFocusShortUrl: function(event) {
+    event.target.select();
+  },
   handleAddRow: function(event) {
     event.preventDefault();
     var reqId = "" + Math.random();
+    var us = this.getStore("UserStore");
     this.setState({_requestId: reqId});
     this.props.context.executeAction(actions.editSpreadsheet, {
       action: "ADD_ROW",
-      _requestId: reqId
+      _requestId: reqId,
+      row: {
+        startdate: moment().format("YYYY-MM-DD"),
+        headline: us.getName() + "'s story"
+      }
     });
   },
   render: function() {
@@ -120,12 +132,15 @@ var UpdateTimeline = React.createClass({
     var rows = _.map(this.state.data.rows, function(row, i) {
       return <RowEditor
                 {...this.props}
-                rowIndex={i}
+                rowId={row.id}
+                rowIndex={row._meta.index}
                 key={"roweditor-" + i}
                 onFocus={this.handleFocusRow}
               />;
     }.bind(this));
 
+    var iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
+    var addDisabled = {disabled: !!this.state._requestId};
     return (
       <div className='row'>
         <div className='six columns'>
@@ -143,8 +158,15 @@ var UpdateTimeline = React.createClass({
               href={ps.getLink("READ", this.state.timelineId)}
               className='button'
               html={<span><i className='fa fa-link fa-fw' /> Share Timeline</span>} />
-            <button className='button-primary pull-right' onClick={this.handleAddRow}>
-              Add Entry
+            {
+              this.state.shortUrl ?
+              <input value={this.state.shortUrl} className='u-pull-right' type='text' readOnly onFocus={this.handleFocusShortUrl} />
+              : '' }
+          </div>
+          <div className='center-text'>
+            <button className='button-primary button-huge button-block' onClick={this.handleAddRow} {...addDisabled}>
+              { this.state._requestId ? <i className='fa fa-spinner fa-spin'></i> : '' }
+              Add My Story
             </button>
             <div className='u-cf'></div>
           </div>
@@ -155,7 +177,7 @@ var UpdateTimeline = React.createClass({
 
         </div>
         <div className='six columns preview-iframe-container'>
-          <iframe id='timeline-preview' src={this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0)} height='650' width='40%' frameBorder='0'></iframe>
+          <iframe id='timeline-preview' src={iframeSrc} height='650' width='40%' frameBorder='0'></iframe>
         </div>
       </div>
     );

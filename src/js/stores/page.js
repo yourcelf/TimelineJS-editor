@@ -1,12 +1,15 @@
 var createStore = require("fluxible/utils/createStore");
 var options = require("../options");
 var utils = require("../utils");
+var goog = require("../goog");
 var _ = require("lodash");
 
 var PageStore = createStore({
   initialize: function() {
     this.urlParams = utils.decodeParams(window.location.search.substring(1));
     this._setPageFromUrlParams();
+    this._shortUrlCache = utils.lsGet("mht-shortUrlCache", {});
+
   },
   storeName: 'PageStore',
   handlers: { 'NAVIGATE': 'handleNavigate' },
@@ -95,6 +98,29 @@ var PageStore = createStore({
         return undefined;
     }
     return this._buildUrl(set, remove);
+  },
+
+  /**
+   * Return a short URL for the given URL.
+   * @param {string} longUrl - the long URL to shorten. If undefined, will use
+   * the current page.
+   * @return {Promise} A promise which resolves with the short URL as a string.
+   */
+  getShortUrl: function(longUrl) {
+
+    if (!longUrl) {
+      longUrl = document.URL;
+    }
+    if (this._shortUrlCache[longUrl]) {
+      return new Promise(function(resolve, reject) {
+        resolve(this._shortUrlCache[longUrl]);
+      }.bind(this));
+    }
+    return goog.shortenUrl(longUrl).then(function(shortUrl) {
+      this._shortUrlCache[longUrl] = shortUrl;
+      utils.lsSet("mht-shortUrlCache", this._shortUrlCache);
+      return shortUrl;
+    }.bind(this));
   },
 
   /**

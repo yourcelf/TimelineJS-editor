@@ -15,6 +15,9 @@ var SpreadsheetStore = createStore({
   getData: function() {
     return this.data;
   },
+  getRowById: function(id) {
+    return _.find(this.data.rows, function(r) { return r.id === id; });
+  },
   hasSpreadsheet: function() {
     return !!this.data.id;
   },
@@ -24,7 +27,7 @@ var SpreadsheetStore = createStore({
   beginPolling: function() {
     console.log("beginPolling");
     this._fetchRows();
-    this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
+    //this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
   },
   stopPolling: function() {
     console.log("stopPolling");
@@ -60,7 +63,7 @@ var SpreadsheetStore = createStore({
       case "ADD_ROW":
         this.emitChange();
         goog.addSpreadsheetRow(
-          this.data.id, this.data.worksheetId, payload.row || {}
+          this.data.id, this.data.worksheetId, payload.row
         ).then(function(row) {
           row._requestId = payload._requestId;
           this.data.rows.push(row);
@@ -125,10 +128,11 @@ var SpreadsheetStore = createStore({
   },
   _setData: function(data) {
     this.data = data;
-    _.each(this.data.rows || [], function(row) {
+    _.each(this.data.rows || [], function(row, i) {
       row._meta = {
         startdateObj: this._parseDate(row.startdate),
-        enddateObj: this._parseDate(row.enddate)
+        enddateObj: this._parseDate(row.enddate),
+        index: i
       };
     }.bind(this));
     return this.data;

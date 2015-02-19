@@ -2929,3 +2929,33 @@ http://nicolasgallagher.com/micro-clearfix-hack/
 .mht-timeline-editor .help-block.error {
   color: #900;
 }
+.mht-timeline-editor .center-text {
+  text-align: center;
+}
+.mht-timeline-editor .button-block {
+  width: 100%;
+  max-width: 100%;
+}
+.mht-timeline-editor .button-huge {
+  font-size: 3rem;
+  padding: 0 4rem;
+  height: 6rem;
+}
+.mht-timeline-editor .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.mht-timeline-editor .social-links {
+  text-align: center;
+}
+.mht-timeline-editor .social-links a {
+  display: inline-block;
+  padding: 1em;
+  width: 2em;
+}

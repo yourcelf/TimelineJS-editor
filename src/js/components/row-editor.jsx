@@ -19,14 +19,14 @@ var RowEditor = React.createClass({
   },
 
   _getRowFromStore: function() {
-    return this.ss.getData().rows[this.props.rowIndex];
+    return this.ss.getRowById(this.props.rowId);
   },
   onChange: function(payload) {
     // If upstream data has changed, check whether our revision has changed.
     // If it has, clobber the current state.
     if (payload && payload.data && payload.data.rows) {
       var row = _.find(payload.data.rows, function(r) {
-        return r.id === this.state.row.id;
+        return r.id === this.props.rowId;
       }.bind(this));
       if (row) {
         if (row._version !== this.state.row._version) {
@@ -34,7 +34,7 @@ var RowEditor = React.createClass({
         }
       } else {
         // This row has been deleted upstream... we should no longer be rendering.
-        console.log("OH NOES Deleted upstream??");
+        console.log("Row", this.state.row._meta.index, "deleted upstream and should disappear soon.");
       }
     }
     // Do on next tick so that if we just clobbered state, dirty check still works.
@@ -71,13 +71,13 @@ var RowEditor = React.createClass({
         }
       }.bind(this),
       onFocus: function() {
-        this.props.onFocus && this.props.onFocus(this.props.rowIndex);
+        this.props.onFocus && this.props.onFocus(this.props.rowId);
       }.bind(this)
     };
   },
   handleTitleTypeChange: function(event) {
     this.setState({type: event.target.checked ? "title" : ""})
-    this.props.onFocus && this.props.onFocus(this.props.rowIndex);
+    this.props.onFocus && this.props.onFocus(this.props.rowId);
   },
   handleSubmit: function(event) {
     event.preventDefault();
@@ -88,19 +88,18 @@ var RowEditor = React.createClass({
   },
   handleDelete: function(event) {
     event.preventDefault();
+    this.setState({deleting: true});
     if (confirm("Are you sure you want to delete this entry?")) {
       var payload = {action: "DELETE_ROW", row: this.state.row};
       this.props.context.executeAction(actions.editSpreadsheet, payload);
     }
   },
   render: function() {
-    var disableSubmit = {
-      disabled: (this.state.saving || !this.state.dirty || !this.state.row.id)
-    };
+    var disableSubmit = { disabled: (this.state.saving || !this.state.dirty) };
     return (
       <form className='edit-row-form'
             onSubmit={this.handleSubmit}
-            data-row-id={this.state.row.id}>
+            data-row-id={this.props.rowId}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>
         <div className='row'>
           <div className='six columns'>
@@ -156,13 +155,14 @@ var RowEditor = React.createClass({
           <div className='six columns'>
             <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
               {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
-              {this.state.saving}
               Save
             </button>
           </div>
           <div className='six columns'>
-            <a className='u-pull-right button delete-link' href='#'
-              onClick={this.handleDelete}>Delete</a>
+            <a className='u-pull-right button delete-link' href='#' onClick={this.handleDelete}>
+              {this.state.deleting ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+              Delete
+            </a>
           </div>
         </div>
       </form>
