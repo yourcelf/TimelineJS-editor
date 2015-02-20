@@ -1,6 +1,10 @@
 var React = require('react');
 var navigateAction = require("../actions").navigate;
 
+/**
+ * React component for a link that fires a navigate action rather than
+ * reloading the browser, for snappy ajax navigation.
+ */
 var SoftLink = React.createClass({
   handleClick: function(event) {
     event.preventDefault();

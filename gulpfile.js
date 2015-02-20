@@ -22,16 +22,17 @@ gulp.task('clean', function(done) {
   del([DEST], done);
 });
 
+var bundler =  browserify({
+  entries: ['./src/js/timeline-editor.js'],
+  debug: true
+}).transform(to5ify);
+
 gulp.task('js', function() {
-  var bundler = browserify({
-    entries: ['./src/js/timeline-editor.js'],
-    debug: true
-  }).transform(to5ify);
   return bundler.bundle()
     .pipe(source(NAME + ".min.js"))
     .pipe(buffer())
     .pipe(sourcemaps.init({loadMaps: true}))
-    //.pipe(uglify())
+    .pipe(uglify())
     .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest(DEST + "js/"));
 });

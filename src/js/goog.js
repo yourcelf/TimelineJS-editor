@@ -5,8 +5,9 @@ var moment = require("moment");
 var _ = require("lodash");
 
 var spreadsheetsBase = "https://spreadsheets.google.com";
-var spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetBase;
+var spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetsBase;
 
+/** URLs endpoints for API requests. */
 var URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
@@ -17,9 +18,13 @@ var URLS = {
 
 /** Authorization scopes for Google */
 var SCOPES = [
+  // For the creation and permission setting of spreadsheets
   "https://www.googleapis.com/auth/drive",
+  // For row read, update and delete operations
   "https://spreadsheets.google.com/feeds",
+  // For getting users' names, used in new row creation
   "https://www.googleapis.com/auth/plus.me",
+  // For creating short URLs for spreadsheet editing screens
   "https://www.googleapis.com/auth/urlshortener"
 ];
 
@@ -32,7 +37,7 @@ var COLUMNS = [
 
 
 /**
- * Load the google api script by inserting a script tag into the DOM.  Returns
+ * Load the google api script by inserting a script tag into the DOM.
  *
  * @return {Promise} A promise which resolves when ``window.gapi`` is fully
  * loaded and available.
@@ -90,6 +95,12 @@ module.exports.authorize = function() {
   });
 };
 
+/**
+ * Given a long URL, create a short URL.
+ *
+ * @param {string} longUrl - the long URL to shorten
+ * @return {Promise} A promise which resolves with the shortened URL as a string.
+ */
 module.exports.shortenUrl = function(longUrl) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
@@ -98,7 +109,6 @@ module.exports.shortenUrl = function(longUrl) {
     superagent.post(URLS.shortener + "?access_token=" + token.access_token + "&alt=json")
       .send({longUrl: longUrl})
       .end(function(err, res) {
-        console.log(err, res);
         if (err) {
           return reject(err);
         }
@@ -112,6 +122,12 @@ module.exports.shortenUrl = function(longUrl) {
   });
 };
 
+/**
+ * Fetch the user profile info for the currently authorized Google user.
+ *
+ * @return {Promise} A promise which resolves with an object containing the
+ * user profile.
+ */
 module.exports.getUserProfile = function() {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
@@ -415,6 +431,8 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
   });
 };
 
+// Convert the given row object from what the Google Spreadsheets API gives us
+// to something a little more readable.
 function _spreadsheetRowToObj(row) {
   var rowObj = {};
   COLUMNS.forEach(function(col) {
@@ -425,17 +443,26 @@ function _spreadsheetRowToObj(row) {
   return rowObj;
 }
 
+// Generate inner <entry> XML for the columns in the given row object.
 function _columnXml(rowObj) {
   return _.map(COLUMNS, function(column) {
     return "<gsx:" + column + ">" + _.escape(rowObj[column] || "") + "</gsx:" + column + ">";
   }).join("\n");
 }
 
+// Wrap the given contents in the namespaced <entry> tags used by the spreadsheet API.
 function _entryXml(contents) {
   return "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended'>" + contents + "</entry>";
 }
 
-module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
+/**
+ * Update the spreadsheet with the given changed row.
+ *
+ * @param {object} rowObj - Row with the updates to be published.
+ * @return {Promise} A promise which when fulfilled contains the new row object
+ * saved by the server.
+ */
+module.exports.editSpreadsheetRow = function(rowObj) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
@@ -468,6 +495,15 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj)
   });
 };
 
+/**
+ * Add a row to the given spreadsheet in the given workshet.
+ *
+ * @param {string} spreadsheetId - the ID of the spreadsheet to modify
+ * @param {string} worksheetId - the ID of the worksheet within the spreadsheet
+ * @param {object} rowObj - values for the new row
+ * @return {Promise} A promise which, when fulfilled, contains the new row as
+ * confirmed by the server.
+ */
 module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
@@ -503,7 +539,14 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
   });
 };
 
-module.exports.deleteSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
+/**
+ * Delete the given row from its spreadsheet.
+ *
+ * @param {object} rowObj - the row object to remove.
+ * @return {Promise} A promise which when fulfilled confirms that the row has
+ * been deleted.
+ */
+module.exports.deleteSpreadsheetRow = function(rowObj) {
   return new Promise(function(resolve, reject) {
     var token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }

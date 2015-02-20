@@ -4,6 +4,9 @@ var authorizeAction = require("../actions").authorize;
 var PageStore = require("../stores/page");
 var goog = require("../goog");
 
+/**
+ * React component for a "login with google" button.
+ */
 var Login = React.createClass({
   mixins: [FluxibleMixin],
   statics: {storeListeners: [PageStore]},
@@ -11,6 +14,12 @@ var Login = React.createClass({
     var redirectUrl = document.location.protocol + "//" +
                       document.location.host +
                       this.getStore("PageStore").getLink("OAUTH_REDIRECT_BASE");
+
+    // It would be cleaner to let the action handle ``goog.popupLogin`` rather
+    // than implementing it here in the view code, but doing so introduces an
+    // indirection that causes popup blockers to get triggered.  To avoid popup
+    // blockers, we need the action requesting the login to be on the same
+    // stack frame as the onClick handler.
     goog.popupLogin(redirectUrl).then(function(token) {
       this.props.context.executeAction(authorizeAction, {token: token});  
     }.bind(this));

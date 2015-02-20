@@ -4,6 +4,9 @@ var actions = require("../actions");
 var utils = require("../utils");
 var options = require("../options");
 
+/**
+ * React component for a form for creating new timelines.
+ */
 var CreateTimeline = React.createClass({
   TEMPLATE_URL_PATTERNS: [
     /docs.google.com\/spreadsheet\/.*\?.*key=([^&#]+)/i,

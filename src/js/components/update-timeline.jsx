@@ -12,6 +12,9 @@ var actions = require("../actions");
 var SoftLink = require("./soft-link.jsx");
 var RowEditor = require("./row-editor.jsx");
 
+/**
+ * React component for the main spreadsheet editor for timelines.
+ */
 var UpdateTimeline = React.createClass({
   mixins: [FluxibleMixin],
   statics: {
@@ -40,22 +43,8 @@ var UpdateTimeline = React.createClass({
 
 
   },
-  getLink: function(dest) {
-    switch (dest) {
-      case "UPDATE":
-        return ps.getUpdateLink(this.state.timelineId);
-      case "READ":
-        return ps.getReadLink(this.state.timelineId);
-      case "CREATE":
-        return ps.getCreateLink(this.state.timelineId);
-    }
-  },
   getInitialState: function() {
-    console.log("Shortening url");
-    this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
-      console.log("Url shortened:", shortUrl);
-      this.setState({shortUrl: shortUrl});
-    }.bind(this));
+    // Just return the standard state-from-stores.
     return this._getStateFromStores();
   },
   onChange: function(payload) {
@@ -87,21 +76,20 @@ var UpdateTimeline = React.createClass({
 
     // Check if this update contains a row that we requested be created.  If
     // so, scroll that row into view and remove our state requesting that row.
-    if (this.state._requestId) {
-      if (payload.data && payload.data.rows) {
-        for (var i = 0; i < payload.data.rows.length; i++) {
-          if (payload.data.rows[i]._requestId === this.state._requestId) {
-            this.setState({_requestId: undefined});
-            // Break closure for the row, and set timeout so we can wait till
-            // the dom has repainted.
-            (function(row) {
-              setTimeout(function() {
-                var el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
-                el.scrollIntoView();
-                el.focus();
-              }, 1);
-            })(payload.data.rows[i])
-          }
+    if (this.state._requestId && payload.data && payload.data.rows) {
+      for (var i = 0; i < payload.data.rows.length; i++) {
+        if (payload.data.rows[i]._requestId === this.state._requestId) {
+          this.setState({_requestId: undefined});
+          // Break closure for the row, and set timeout so we can wait till
+          // the dom has repainted.
+          (function(row) {
+            setTimeout(function() {
+              var el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
+              el.scrollIntoView();
+              el.focus();
+            }, 1);
+          })(payload.data.rows[i])
+          break;
         }
       }
     }
@@ -113,15 +101,20 @@ var UpdateTimeline = React.createClass({
     this.setState({previewUrlBase: newUrl});
   },
   componentWillMount: function() {
+    // Start polling for remote spreadsheet updates.
     this.getStore("SpreadsheetStore").beginPolling();
+    // Get the short URL.
+    this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
+      this.setState({shortUrl: shortUrl});
+    }.bind(this));
   },
   componentWillUnmount: function() {
+    // Stop polling for remote spreadsheet updates.
     this.getStore("SpreadsheetStore").stopPolling();
   },
   handleFocusRow: function(rowId) {
-    // row index is in spreadsheet row order; but focus indices for the iframe
-    // are in time order.  Sort the rows by date, and find the new index for
-    // focusing.
+    // Given a rowId, find the date-sorted index to pass as the url hash to
+    // the iframe.
     var sortedRows = _.sortBy(this.state.data.rows, function(r) {
       return r._meta.startdateObj;
     });
@@ -137,9 +130,16 @@ var UpdateTimeline = React.createClass({
   },
   handleAddRow: function(event) {
     event.preventDefault();
+    // Set a random ``request ID`` which the SpreadsheetStore will include with
+    // the new row, so that we know it is the one we requested and can update
+    // UI to scroll to it.  This is necessary due to the one-way rule in flux:
+    // we don't get any direct callback from an action, just a general
+    // ``onChange`` from the store.
     var reqId = "" + Math.random();
-    var us = this.getStore("UserStore");
     this.setState({_requestId: reqId});
+
+    // Set the user's name and current date as defaults for the new row.
+    var us = this.getStore("UserStore");
     this.props.context.executeAction(actions.editSpreadsheet, {
       action: "ADD_ROW",
       _requestId: reqId,
@@ -157,6 +157,8 @@ var UpdateTimeline = React.createClass({
       action: "SET_ANYONE_CAN_EDIT",
       anyoneCanEdit: target
     });
+    // Update state to include our goals for what we'd like ``anyoneCanEdit``
+    // to be; which will be cleared when we get an update from the store.
     this.setState({
       _anyoneCanEditTarget: target,
       _anyoneCanEditChange: true
@@ -176,7 +178,7 @@ var UpdateTimeline = React.createClass({
       )
     }
 
-    var ps = this.getStore("PageStore");
+    // Editor rows
     var rows = _.map(this.state.data.rows, function(row, i) {
       return <RowEditor
                 {...this.props}
@@ -186,7 +188,6 @@ var UpdateTimeline = React.createClass({
                 onFocus={this.handleFocusRow}
               />;
     }.bind(this));
-
 
     // Permissions display.
     var permsDisplayText, permsButtonText;
@@ -204,8 +205,14 @@ var UpdateTimeline = React.createClass({
       permsButtonText = <i className='fa fa-spinner fa-spin' />
     }
 
-    var iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
+    // Disabled state for "Add" button.
     var addDisabled = {disabled: !!this.state._requestId};
+
+    // Source for the preview iframe
+    var iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
+
+    // Page store for getting links.
+    var ps = this.getStore("PageStore");
 
     return (
       <div className='row'>

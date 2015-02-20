@@ -75,44 +75,44 @@ var SpreadsheetStore = createStore({
         ).then(function(row) {
           row._requestId = payload._requestId;
           this.data.rows.push(row);
-          this._setData(this.data); // XXX this could be better...
+          // Reparse date objects and indices.
+          this._setData(this.data);
           this.emitChange();
         }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       case "DELETE_ROW":
-        goog.deleteSpreadsheetRow(
-          this.spreadsheetId, this.data.worksheetId, payload.row
-        ).then(function(res) {
+        goog.deleteSpreadsheetRow(payload.row).then(function(res) {
           this.data.rows = _.reject(this.data.rows, function(r) {
             return r.id === payload.row.id;
           });
+          // Reparse date objects and indices.
+          this._setData(this.data);
           this.emitChange();
         }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       case "CHANGE_ROW":
-        goog.editSpreadsheetRow(
-          this.data.id, this.data.worksheetId, payload.row 
-        ).then(function(row) {
+        goog.editSpreadsheetRow(payload.row).then(function(row) {
           for (var i = 0; i < this.data.rows.length; i++) {
             if (this.data.rows[i].id === row.id) {
               this.data.rows[i] = row;
               break;
             }
           }
-          this._setData(this.data); // XXX this could be better...
+          // Reparse date objects and indices.
+          this._setData(this.data);
           this.emitChange();
         }.bind(this)).catch(this.handleApiError.bind(this));
         break;
       case "SET_ANYONE_CAN_EDIT":
         if (payload.anyoneCanEdit) {
           goog.addAnyoneCanEdit(this.data.id).then(function() {
-            // temporary until the next poll update.
+            // Add placeholder for the coming anyone/writer permission, which
+            // will be clobbered by the next polling update.
             this.data.permissions.push({role: "writer", id: "anyone"});
             this.emitChange();
           }.bind(this)).catch(this.handleApiError.bind(this));
         } else {
           goog.removeAnyoneCanEdit(this.data.id).then(function(res) {
-            console.log(res);
             this.data.permissions = _.reject(this.data.permissions, function(perm) {
               return perm.id === "anyone" && perm.role === "writer";
             });

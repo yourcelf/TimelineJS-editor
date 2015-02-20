@@ -7,6 +7,9 @@ var SpreadsheetStore = require("../stores/spreadsheet");
 var actions = require("../actions");
 
 
+/**
+ * React component for a single row's editing form.
+ */
 var RowEditor = React.createClass({
   mixins: [FluxibleMixin],
   statics: {
@@ -23,7 +26,8 @@ var RowEditor = React.createClass({
   },
   onChange: function(payload) {
     // If upstream data has changed, check whether our revision has changed.
-    // If it has, clobber the current state.
+    // If it has, clobber the current state. NOTE: This means unsaved changes
+    // in the current state will be lost.
     if (payload && payload.data && payload.data.rows) {
       var row = _.find(payload.data.rows, function(r) {
         return r.id === this.props.rowId;
@@ -75,6 +79,9 @@ var RowEditor = React.createClass({
       }.bind(this)
     };
   },
+  // Title type is special cased so we can use checkbox semantics rather than
+  // text input. That means that its body is partially duplicated from the
+  // ``getInputProps`` used by everything else.
   handleTitleTypeChange: function(event) {
     var newRow = _.extend({}, this.state.row);
     newRow.type =  event.target.checked ? "title" : "";

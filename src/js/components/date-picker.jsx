@@ -3,6 +3,9 @@ var React = require("react");
 var PureRenderMixin = require("react/addons").PureRenderMixin;
 var Pikaday = require("pikaday");
 
+/**
+ * React comnponent for a pikaday date picker.
+ */
 var DatePicker = React.createClass({
   mixins: [React.addons.PureRenderMixin],
   _buildPicker: function(el) {
