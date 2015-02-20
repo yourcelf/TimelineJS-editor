@@ -15,8 +15,8 @@ var UserStore = createStore({
       this.emitChange();
     }.bind(this)).catch(function(err) {
       console.log(err);
-    });
-   this.emitChange();
+      this.emitChange();
+    }.bind(this));
   },
   isLoggedIn: function() {
     return !!this.token;

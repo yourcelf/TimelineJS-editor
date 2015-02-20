@@ -15,6 +15,7 @@ var Login = React.createClass({
       this.props.context.executeAction(authorizeAction, {token: token});  
     }.bind(this));
   },
+  onChange: function() {},
   render: function() {
     return (
       <div>
