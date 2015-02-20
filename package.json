@@ -1,7 +1,7 @@
 {
   "name": "timeline-editor",
-  "version": "0.0.0",
-  "description": "**Table of Contents**",
+  "version": "0.1.0",
+  "description": "Editor for TimelineJS timelines",
   "main": "gulpfile.js",
   "directories": {
     "example": "examples",
@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp build",
     "postinstall": "bower install",
-    "start": "gulp build && gulp watch"
+    "start": "gulp watch"
   },
   "repository": {
     "type": "git",
