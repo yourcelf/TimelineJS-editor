@@ -29,7 +29,6 @@ var UpdateTimeline = React.createClass({
     // Shallow copy the data/rows so we can do change comparison.
     var data = _.clone(ss.getData());
     data.rows = _.clone(data.rows);
-    console.log("permissions", data.permissions);
     return {
       timelineId: ps.getTimelineId(),
       // URL for preview iframe without ``source=`` param or hash.
