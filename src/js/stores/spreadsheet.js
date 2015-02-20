@@ -69,7 +69,6 @@ var SpreadsheetStore = createStore({
   handleEditSpreadsheet: function(payload) {
     switch (payload.action) {
       case "ADD_ROW":
-        this.emitChange();
         goog.addSpreadsheetRow(
           this.data.id, this.data.worksheetId, payload.row
         ).then(function(row) {
@@ -168,7 +167,7 @@ var SpreadsheetStore = createStore({
     if (!(str && str.trim && str.trim())) {
       return null;
     }
-    var formats = [undefined, "MM-DD-YYY", "M-D-YYYY"];
+    var formats = [undefined, "MM-DD-YY", "M-D-YYYY"];
     for (var i = 0; i < formats.length; i++) {
       var d = moment(str, formats[i]);
       if (d.isValid()) {

@@ -204,9 +204,8 @@ module.exports.popupLogin = function(redirectUriBase) {
  * to allow anyone to edit it.
  *
  * @param {string} title - The titel to give to the copied spreadsheet.
- * @param {string} link - A google spreadsheet link or standalone timeline link
- * which identifies the source spreadsheet to duplicate. If ommitted, the default
- * spreadsheet defined in options will be used.
+ * @param {string} templateId - The ID for the google spreadsheet to copy.  If
+ * ommitted, the default templateId defined in options will be used.
  */
 module.exports.duplicateTemplate = function(title, templateId) {
   var spreadsheetRes;

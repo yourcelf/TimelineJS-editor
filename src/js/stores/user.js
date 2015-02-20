@@ -1,5 +1,4 @@
 var createStore = require("fluxible/utils/createStore");
-var utils = require("../utils");
 var goog = require("../goog");
 
 var UserStore = createStore({
