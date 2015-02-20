@@ -427,7 +427,7 @@ function _spreadsheetRowToObj(row) {
 
 function _columnXml(rowObj) {
   return _.map(COLUMNS, function(column) {
-    return "<gsx:" + column + ">" + (rowObj[column] || "") + "</gsx:" + column + ">";
+    return "<gsx:" + column + ">" + _.escape(rowObj[column] || "") + "</gsx:" + column + ">";
   }).join("\n");
 }
 
@@ -461,6 +461,7 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj)
         try {
           return resolve(_spreadsheetRowToObj(res.body.entry));
         } catch (e) {
+          console.log(res);
           return reject(e);
         }
       });
@@ -495,6 +496,7 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
         try {
           return resolve(_spreadsheetRowToObj(res.body.entry));
         } catch(e) {
+          console.log(res);
           return reject(e);
         }
       });
