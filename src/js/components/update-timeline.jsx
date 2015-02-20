@@ -20,6 +20,7 @@ var UpdateTimeline = React.createClass({
   _getStateFromStores: function() {
     var ps = this.getStore("PageStore");
     var ss = this.getStore("SpreadsheetStore");
+    var us = this.getStore("UserStore");
     // FIXME: Doesn't feel right to update the state of SpreadsheetStore here..
     // is there a better way?  Can a Store obtain a reference to another Store?
     if (ss.getData().id !== ps.getTimelineId()) {
@@ -28,12 +29,17 @@ var UpdateTimeline = React.createClass({
     // Shallow copy the data/rows so we can do change comparison.
     var data = _.clone(ss.getData());
     data.rows = _.clone(data.rows);
+    console.log("permissions", data.permissions);
     return {
       timelineId: ps.getTimelineId(),
       // URL for preview iframe without ``source=`` param or hash.
       previewUrlBase: 'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&height=650',
-      data: data 
+      data: data,
+      anyoneCanEdit: ss.anyoneCanEdit()
     }
+
+
+
   },
   getLink: function(dest) {
     switch (dest) {
@@ -55,8 +61,10 @@ var UpdateTimeline = React.createClass({
   },
   onChange: function(payload) {
     // Detect whether we've changed, and should reload the iframe.
-    // TODO: handle ss error state.
     var ss = this.getStore("SpreadsheetStore");
+    if (ss.error) {
+      this.setState({error: ss.error});
+    }
     var dirty = false;
     if (this.state.data && payload.data && this.state.data.rows && payload.data.rows) {
       dirty = ss.spreadsheetsDiffer(this.state.data, payload.data);
@@ -65,6 +73,19 @@ var UpdateTimeline = React.createClass({
     if (dirty) {
       this.reloadIframe();
     }
+
+    // Check if we've updated the ``anyoneCanEdit`` status in response to a
+    // request to do so.
+    if (this.state._anyoneCanEditChange) {
+      if (ss.anyoneCanEdit() === this.state._anyoneCanEditTarget) {
+        this.setState({
+          anyoneCanEdit: this.state._anyoneCanEditTarget,
+          _anyoneCanEditTarget: undefined,
+          _anyoneCanEditChange: undefined
+        });
+      }
+    }
+
     // Check if this update contains a row that we requested be created.  If
     // so, scroll that row into view and remove our state requesting that row.
     if (this.state._requestId) {
@@ -76,7 +97,9 @@ var UpdateTimeline = React.createClass({
             // the dom has repainted.
             (function(row) {
               setTimeout(function() {
-                document.querySelector("[data-row-id='" + row.id + "']").scrollIntoView();
+                var el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
+                el.scrollIntoView();
+                el.focus();
               }, 1);
             })(payload.data.rows[i])
           }
@@ -127,7 +150,33 @@ var UpdateTimeline = React.createClass({
       }
     });
   },
+  toggleAnyoneCanEdit: function(event) {
+    event.preventDefault();
+    var ss = this.getStore("SpreadsheetStore");
+    var target = !ss.anyoneCanEdit();
+    this.props.context.executeAction(actions.editSpreadsheet, {
+      action: "SET_ANYONE_CAN_EDIT",
+      anyoneCanEdit: target
+    });
+    this.setState({
+      _anyoneCanEditTarget: target,
+      _anyoneCanEditChange: true
+    });
+  },
   render: function() {
+    if (this.state.error) {
+      return (
+        <div>
+          <h1>Error</h1>
+          <p>Sorry, I tripped over myself there. Please refresh the page to try again.</p>
+          <div>
+            Technical details:<br />
+            <small><pre>{this.state.error.toString()}</pre></small>
+          </div>
+        </div>
+      )
+    }
+
     var ps = this.getStore("PageStore");
     var rows = _.map(this.state.data.rows, function(row, i) {
       return <RowEditor
@@ -139,8 +188,26 @@ var UpdateTimeline = React.createClass({
               />;
     }.bind(this));
 
+
+    // Permissions display.
+    var permsDisplayText, permsButtonText;
+    if (this.state.anyoneCanEdit === null) {
+      permsDisplayText = "";
+      permsButtonText = <i className='fa fa-spinner fa-spin' />
+    } else if (this.state.anyoneCanEdit === true) {
+      permsDisplayText = <span><i className='fa fa-unlock fa-fw' />Anyone can edit this.</span>;
+      permsButtonText = "Lock it down";
+    } else if (this.state.anyoneCanEdit === false) {
+      permsDisplayText = <span><i className='fa fa-lock fa-fw' />Only select users can edit this.</span>;
+      permsButtonText = "Let anyone edit";
+    }
+    if (this.state._anyoneCanEditChange) {
+      permsButtonText = <i className='fa fa-spinner fa-spin' />
+    }
+
     var iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
     var addDisabled = {disabled: !!this.state._requestId};
+
     return (
       <div className='row'>
         <div className='six columns'>
@@ -176,8 +243,14 @@ var UpdateTimeline = React.createClass({
           </ReactCSSTransitionGroup>
 
         </div>
-        <div className='six columns preview-iframe-container'>
-          <iframe id='timeline-preview' src={iframeSrc} height='650' width='40%' frameBorder='0'></iframe>
+        <div className='six columns'>
+          <p className='perms-control'>
+            { permsDisplayText }{' '}
+            <button onClick={this.toggleAnyoneCanEdit}>{ permsButtonText }</button>
+          </p>
+          <div className='preview-iframe-container'>
+            <iframe id='timeline-preview' src={iframeSrc} height='650' width='40%' frameBorder='0'></iframe>
+          </div>
         </div>
       </div>
     );

@@ -103,7 +103,7 @@ module.exports.shortenUrl = function(longUrl) {
           return reject(err);
         }
         try {
-          var data = JSON.parse(res.text)
+          var data = JSON.parse(res.text);
           return resolve(data.id);
         } catch (e) {
           return reject(e);
@@ -276,14 +276,24 @@ module.exports.addAnyoneCanEdit = function(spreadsheetId) {
  */
 module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
   return new Promise(function(resolve, reject) {
+    console.log(spreadsheetId);
     gapi.client.load('drive', 'v2', function() {
-      var req = gapi.client.drive.permissions.update({
-        fileId: spreadsheetId,
-        id: "anyone",
-        type: "anyone",
-        role: "reader",
-      });
-      req.execute(resolve);
+      try {
+        var req = gapi.client.drive.permissions.update({
+          fileId: spreadsheetId,
+          permissionId: "anyone",
+          type: "anyone",
+          role: "reader",
+        });
+        req.execute(function(res) {
+          if (!(res.role === "reader" && res.id === "anyone")) {
+            return reject(res);
+          }
+          return resolve(res);
+        });
+      } catch (e) {
+        reject(e);
+      }
     });
   });
 };
@@ -316,6 +326,7 @@ var parseDate = function(str) {
 module.exports.fetchSpreadsheet = function(spreadsheetId) {
   var data = {};
   return module.exports.getFilePermissions(spreadsheetId).then(function(perms) {
+    _.extend(data, perms);
     return module.exports.getWorksheetInfo(spreadsheetId);
   }).then(function(worksheetInfo) {
     _.extend(data, worksheetInfo);
@@ -447,7 +458,11 @@ module.exports.editSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj)
         if (err) {
           return reject(err);
         }
-        return resolve(_spreadsheetRowToObj(res.body.entry));
+        try {
+          return resolve(_spreadsheetRowToObj(res.body.entry));
+        } catch (e) {
+          return reject(e);
+        }
       });
   });
 };
@@ -477,7 +492,11 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
         if (err) {
           return reject(err);
         }
-        return resolve(_spreadsheetRowToObj(res.body.entry));
+        try {
+          return resolve(_spreadsheetRowToObj(res.body.entry));
+        } catch(e) {
+          return reject(e);
+        }
       });
   });
 };

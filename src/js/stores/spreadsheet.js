@@ -27,7 +27,7 @@ var SpreadsheetStore = createStore({
   beginPolling: function() {
     console.log("beginPolling");
     this._fetchRows();
-    //this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
+    this._pollInterval = setInterval(this._fetchRows.bind(this), 10000);
   },
   stopPolling: function() {
     console.log("stopPolling");
@@ -35,7 +35,15 @@ var SpreadsheetStore = createStore({
       clearInterval(this._pollInterval);
     }
   },
-
+  anyoneCanEdit: function() {
+    if (this.data.permissions) {
+      return !!_.find(this.data.permissions, function(perm) {
+        return perm.role === "writer" && perm.id === "anyone";
+      });
+    } else {
+      return null;
+    }
+  },
   // Handlers
   handlers: {
     "EDIT_SPREADSHEET": "handleEditSpreadsheet",
@@ -95,11 +103,30 @@ var SpreadsheetStore = createStore({
           this.emitChange();
         }.bind(this)).catch(this.handleApiError.bind(this));
         break;
+      case "SET_ANYONE_CAN_EDIT":
+        if (payload.anyoneCanEdit) {
+          goog.addAnyoneCanEdit(this.data.id).then(function() {
+            // temporary until the next poll update.
+            this.data.permissions.push({role: "writer", id: "anyone"});
+            this.emitChange();
+          }.bind(this)).catch(this.handleApiError.bind(this));
+        } else {
+          goog.removeAnyoneCanEdit(this.data.id).then(function(res) {
+            console.log(res);
+            this.data.permissions = _.reject(this.data.permissions, function(perm) {
+              return perm.id === "anyone" && perm.role === "writer";
+            });
+            this.emitChange();
+          }.bind(this)).catch(this.handleApiError.bind(this));
+        }
+        break;
       default:
         throw new Error("Unknown action " + payload.action);
     }
     this.emitChange();
   },
+
+
   spreadsheetsDiffer: function(data1, data2) {
     var d1Falsy = !data1.rows;
     var d2Falsy = !data2.rows;

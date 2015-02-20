@@ -2862,7 +2862,7 @@ http://nicolasgallagher.com/micro-clearfix-hack/
   .mht-timeline-editor .preview-iframe-container iframe {
     position: fixed;
     right: 2rem;
-    top: 2rem;
+    top: 6rem;
     box-shadow: 0px 0px 2px #000;
   }
 }
@@ -2931,6 +2931,14 @@ http://nicolasgallagher.com/micro-clearfix-hack/
 }
 .mht-timeline-editor .center-text {
   text-align: center;
+}
+.mht-timeline-editor .right-text {
+  text-align: right;
+}
+.mht-timeline-editor .perms-control {
+  text-align: right;
+  padding: 1rem;
+  width: 100%;
 }
 .mht-timeline-editor .button-block {
   width: 100%;
