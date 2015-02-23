@@ -29,6 +29,7 @@ var UrlTest = React.createClass({
         <tr><th>OAUTH_REDIRECT_BASE</th><td>{ps.getLink("OAUTH_REDIRECT_BASE")}</td></tr>
         <tr><th>redirectUriBase</th><td>{redirectUriBase}</td></tr>
         <tr><th>redirectUri</th><td>{redirectUri}</td></tr>
+        <tr><th>userAgnet</th><td>{navigator.userAgent}</td></tr>
       </table>
     );
   }
