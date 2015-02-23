@@ -54,6 +54,8 @@ var PageStore = createStore({
       this.page = "UPDATE";
     } else if (this.urlParams[options.timelineParam]) {
       this.page = "READ";
+    } else if (this.urlParams.urltest) {
+      this.page = "URLTEST";
     } else {
       this.page = "CREATE";
     }
@@ -80,6 +82,10 @@ var PageStore = createStore({
     var set = {};
     var remove = [];
     switch (action) {
+      case "URLTEST":
+        set[options.timelineParam] = "urltest";
+        remove = [options.timelineParam, options.editParam];
+        break;
       case "READ":
         set[options.timelineParam] = timelineId;
         remove.push(options.editParam);
@@ -92,7 +98,7 @@ var PageStore = createStore({
         remove = [options.timelineParam, options.editParam];
         break;
       case "OAUTH_REDIRECT_BASE":
-        remove = [options.timelineParam, options.editParam];
+        remove = [options.timelineParam, options.editParam, "urltest"];
         break;
       default:
         return undefined;

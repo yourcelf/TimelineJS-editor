@@ -10,6 +10,7 @@ var Login = require('./login.jsx');
 var CreateTimeline = require('./create-timeline.jsx');
 var ReadTimeline = require("./read-timeline.jsx");
 var UpdateTimeline = require('./update-timeline.jsx');
+var UrlTest = require('./urltest.jsx');
 
 /**
  * Main container react component for the MHT Timeline Editor.
@@ -54,6 +55,8 @@ var Main = React.createClass({
     } else if (this.state.page === 'READ') {
       // Read-only view for publishing.
       main = <ReadTimeline context={this.props.context} />;
+    } else if (this.state.page === 'URLTEST') {
+      main = <UrlTest context={this.props.context} />;
     } else if (!this.state.loggedIn) {
       // All subsequent views require login. Regardless of page state, show the
       // login screen here if we aren't authed.

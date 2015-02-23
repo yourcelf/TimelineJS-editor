@@ -13,13 +13,19 @@ module.exports.decodeParams = function(query) {
   }
   query = query.split("#")[0];
   var match,
-      search = /([^&=]+)=?([^&]*)/g,
+      search = /([^&=]+)(=?)([^&]*)/g,
       decode = function (s) { return decodeURIComponent(s.replace(/\+/g, " ")); };
 
   var params = {};
   /* jshint boss: true */
   while (match = search.exec(query)) {
-     params[decode(match[1])] = decode(match[2]);
+    if (match[2]) {
+      // If we have an '=' sign, assign the value.
+      params[decode(match[1])] = decode(match[3]);
+    } else {
+      // No '=' sign (e.g. a bare param)? call it undefined.
+      params[decode(match[1])] = undefined;
+    }
   }
   /* jshint boss: false */
   return params;
@@ -33,6 +39,9 @@ module.exports.decodeParams = function(query) {
  */
 module.exports.encodeParams = function(mapping) {
   return _.map(mapping, function(val, key) {
+    if (typeof val === 'undefined') {
+      return key;
+    }
     return key + "=" + encodeURIComponent(val);
   }).join("&");
 };
