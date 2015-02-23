@@ -51,6 +51,7 @@ window.mhtEditor = function(opts) {
   app.registerStore(require("./stores/page"));
   var context = app.createContext();
 
+
   // Initialize authorization state with google.
   context.executeAction(actions.authorize, {}, function() {
     React.render(

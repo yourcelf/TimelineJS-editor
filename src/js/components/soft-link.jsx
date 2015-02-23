@@ -1,4 +1,5 @@
 var React = require('react');
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 var navigateAction = require("../actions").navigate;
 
 /**
@@ -6,6 +7,7 @@ var navigateAction = require("../actions").navigate;
  * reloading the browser, for snappy ajax navigation.
  */
 var SoftLink = React.createClass({
+  mixins: [PureRenderMixin],
   handleClick: function(event) {
     event.preventDefault();
     this.props.context.executeAction(navigateAction, {href: this.props.href});

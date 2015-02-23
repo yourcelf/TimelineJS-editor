@@ -3,7 +3,7 @@
 var gulp = require('gulp');
 var browserify = require('browserify');
 var browserSync = require("browser-sync");
-var to5ify = require("6to5ify");
+var babelify = require("babelify");
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var uglify = require('gulp-uglify');
@@ -23,9 +23,8 @@ gulp.task('clean', function(done) {
 });
 
 var bundler =  browserify({
-  entries: ['./src/js/timeline-editor.js'],
-  debug: true
-}).transform(to5ify);
+  entries: ['./src/js/timeline-editor.js']
+}).transform(babelify);
 
 gulp.task('js', function() {
   return bundler.bundle()

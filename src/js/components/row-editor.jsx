@@ -1,6 +1,7 @@
 var _ = require("lodash");
 var React = require("react");
 var FluxibleMixin = require('fluxible').Mixin
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 var DatePicker = require("./date-picker.jsx");
 var SpreadsheetStore = require("../stores/spreadsheet");
 
@@ -11,7 +12,7 @@ var actions = require("../actions");
  * React component for a single row's editing form.
  */
 var RowEditor = React.createClass({
-  mixins: [FluxibleMixin],
+  mixins: [FluxibleMixin, PureRenderMixin],
   statics: {
     storeListeners: [SpreadsheetStore]
   },

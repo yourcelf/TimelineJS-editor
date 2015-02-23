@@ -1,6 +1,6 @@
-/** @jsx React.DOM */
 var FluxibleMixin = require('fluxible').Mixin;
 var React = require('react');
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 // stores
 var UserStore = require('../stores/user');
 var SpreadsheetStore = require('../stores/spreadsheet');
@@ -15,7 +15,7 @@ var UpdateTimeline = require('./update-timeline.jsx');
  * Main container react component for the MHT Timeline Editor.
  */
 var Main = React.createClass({
-  mixins: [FluxibleMixin],
+  mixins: [FluxibleMixin, PureRenderMixin],
   statics: {
     storeListeners: [UserStore, PageStore, SpreadsheetStore]
   },

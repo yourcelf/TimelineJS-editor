@@ -7,7 +7,7 @@ var Pikaday = require("pikaday");
  * React comnponent for a pikaday date picker.
  */
 var DatePicker = React.createClass({
-  mixins: [React.addons.PureRenderMixin],
+  mixins: [PureRenderMixin],
   _buildPicker: function(el) {
     new Pikaday({
       field: el,

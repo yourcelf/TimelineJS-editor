@@ -1,4 +1,5 @@
 var React = require("react");
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 var goog = require("../goog");
 var actions = require("../actions");
 var utils = require("../utils");
@@ -8,6 +9,7 @@ var options = require("../options");
  * React component for a form for creating new timelines.
  */
 var CreateTimeline = React.createClass({
+  mixins: [PureRenderMixin],
   TEMPLATE_URL_PATTERNS: [
     /docs.google.com\/spreadsheet\/.*\?.*key=([^&#]+)/i,
     /docs.google.com\/spreadsheets\/d\/([^\/]+)\/edit/i,

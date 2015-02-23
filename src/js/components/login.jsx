@@ -1,5 +1,6 @@
 var FluxibleMixin = require('fluxible').Mixin
 var React = require("react");
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 var authorizeAction = require("../actions").authorize;
 var PageStore = require("../stores/page");
 var goog = require("../goog");
@@ -8,7 +9,7 @@ var goog = require("../goog");
  * React component for a "login with google" button.
  */
 var Login = React.createClass({
-  mixins: [FluxibleMixin],
+  mixins: [FluxibleMixin, PureRenderMixin],
   statics: {storeListeners: [PageStore]},
   handleClick: function() {
     var redirectUrl = document.location.protocol + "//" +
@@ -24,6 +25,7 @@ var Login = React.createClass({
       this.props.context.executeAction(authorizeAction, {token: token});  
     }.bind(this));
   },
+  // Function must be present or fluxible throws an error
   onChange: function() {},
   render: function() {
     return (

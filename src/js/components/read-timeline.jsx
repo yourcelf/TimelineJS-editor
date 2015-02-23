@@ -1,5 +1,6 @@
 var FluxibleMixin = require('fluxible').Mixin
 var React = require('react');
+var PureRenderMixin = require("react/addons").PureRenderMixin;
 var _ = require('lodash');
 var PageStore = require('../stores/page');
 var actions = require('../actions');
@@ -8,7 +9,7 @@ var actions = require('../actions');
  * React component for a read-only view of timelines.
  */
 var ReadTimeline = React.createClass({
-  mixins: [FluxibleMixin],
+  mixins: [FluxibleMixin, PureRenderMixin],
   statics: {storeListeners: [PageStore]},
   _getStateFromStores: function() {
     var ps = this.getStore('PageStore');
