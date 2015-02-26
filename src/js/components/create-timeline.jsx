@@ -77,7 +77,7 @@ var CreateTimeline = React.createClass({
       if (this.state.templateUrl === "") {
         templateUrlHelp = <span>
           If blank, the {' '}
-          <a href={'https://drive.google.com/previewtemplate?id=' + options.templateId + '&mode=public'} target='_blank'>default template</a>
+          <a href={'https://docs.google.com/spreadsheet/ccc?key=' + options.templateId + '&mode=public'} target='_blank'>default template</a>
           {' '} will be used.
         </span>;
       } else if (this.state.templateUrlError) {
