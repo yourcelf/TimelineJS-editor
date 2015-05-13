@@ -1,15 +1,16 @@
-var _ = require("lodash");
-var React = require("react");
-var PureRenderMixin = require("react/addons").PureRenderMixin;
-var Pikaday = require("pikaday");
+"use strict";
+const _ = require("lodash");
+const React = require("react");
+const PureRenderMixin = require("react/addons").PureRenderMixin;
+const Pikaday = require("pikaday");
 
 /**
  * React comnponent for a pikaday date picker.
  */
-var DatePicker = React.createClass({
+const DatePicker = React.createClass({
   mixins: [PureRenderMixin],
   _buildPicker: function(el) {
-    new Pikaday({
+    return new Pikaday({
       field: el,
       // onChange doesn't fire with mouse selection; so bind onClose.
       onClose: function() { this.handleOnChange({target: el}); }.bind(this),
@@ -17,25 +18,26 @@ var DatePicker = React.createClass({
     });
   },
   getInitialState: function() {
-    return {value: this.props.value}
+    return {value: this.props.value};
   },
   componentDidMount: function() {
     this._buildPicker(this.getDOMNode());
   },
   handleOnChange: function(event) {
     this.setState({value: event.target.value});
-    this.props.onChange && this.props.onChange(event);
+    if (this.props.onChange) {
+      this.props.onChange(event);
+    }
   },
   render: function() {
-    var disableSubmit = this.state.dirty ? {} : {disabled: true};
+    let disableSubmit = this.state.dirty ? {} : {disabled: true};
     return <input
         type='text'
         value={this.state.value}
         onChange={this.handleOnChange}
         className={this.props.className}
-        name={this.props.name}
-      />
+        name={this.props.name} />;
   }
 });
 
-module.exports = DatePicker
+module.exports = DatePicker;

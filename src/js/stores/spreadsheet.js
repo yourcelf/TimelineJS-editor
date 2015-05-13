@@ -1,11 +1,10 @@
-var createStore = require("fluxible/addons/createStore");
-var goog = require("../goog");
-var _ = require("lodash");
-var moment = require("moment");
-var utils = require("../utils");
-var options = require("../options");
+"use strict";
+const createStore = require("fluxible/addons/createStore");
+const goog = require("../goog");
+const _ = require("lodash");
+const moment = require("moment");
 
-var SpreadsheetStore = createStore({
+const SpreadsheetStore = createStore({
   storeName: "SpreadsheetStore",
   initialize: function() {
     this.data = {};
@@ -47,7 +46,7 @@ var SpreadsheetStore = createStore({
   // Handlers
   handlers: {
     "EDIT_SPREADSHEET": "handleEditSpreadsheet",
-    "SET_SPREADSHEET_ID": "handleSetSpreadsheetId",
+    "SET_SPREADSHEET_ID": "handleSetSpreadsheetId"
   },
 
   handleApiError: function(err) {
@@ -91,7 +90,7 @@ var SpreadsheetStore = createStore({
         break;
       case "CHANGE_ROW":
         goog.editSpreadsheetRow(payload.row).then(function(row) {
-          for (var i = 0; i < this.data.rows.length; i++) {
+          for (let i = 0; i < this.data.rows.length; i++) {
             if (this.data.rows[i].id === row.id) {
               this.data.rows[i] = row;
               break;
@@ -127,14 +126,14 @@ var SpreadsheetStore = createStore({
 
 
   spreadsheetsDiffer: function(data1, data2) {
-    var d1Falsy = !data1.rows;
-    var d2Falsy = !data2.rows;
+    let d1Falsy = !data1.rows;
+    let d2Falsy = !data2.rows;
     if (d1Falsy !== d2Falsy || data1.rows.length !== data2.rows.length) {
       return true;
     } else if (!data1.rows) {
       return false;
     }
-    for (var i = 0; i < data1.rows.length; i++) {
+    for (let i = 0; i < data1.rows.length; i++) {
       if (this.rowsDiffer(data1.rows[i], data2.rows[i])) {
         return true;
       }
@@ -142,8 +141,8 @@ var SpreadsheetStore = createStore({
     return false;
   },
   rowsDiffer: function(row1, row2) {
-    for (var key in row1) {
-      if (key.substring(0,1) === "_") {
+    for (let key in row1) {
+      if (key.charAt(0) === "_") {
         continue;
       }
       if (row1[key] !== row2[key]) {
@@ -167,9 +166,9 @@ var SpreadsheetStore = createStore({
     if (!(str && str.trim && str.trim())) {
       return null;
     }
-    var formats = [undefined, "MM-DD-YY", "M-D-YYYY"];
-    for (var i = 0; i < formats.length; i++) {
-      var d = moment(str, formats[i]);
+    let formats = [undefined, "MM-DD-YY", "M-D-YYYY"];
+    for (let i = 0; i < formats.length; i++) {
+      let d = moment(str, formats[i]);
       if (d.isValid()) {
         return d;
       }
@@ -191,6 +190,6 @@ var SpreadsheetStore = createStore({
     } else {
       this.data = {};
     }
-  },
+  }
 });
 module.exports = SpreadsheetStore;

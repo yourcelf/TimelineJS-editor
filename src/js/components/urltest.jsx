@@ -1,20 +1,21 @@
-var React = require("react");
-var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-var PureRenderMixin = require("react/addons").PureRenderMixin;
-var PageStore = require("../stores/page");
-var options = require("../options");
+"use strict";
+const React = require("react");
+const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
+const PureRenderMixin = require("react/addons").PureRenderMixin;
+const PageStore = require("../stores/page");
+const options = require("../options");
 
-var UrlTest = React.createClass({
+const UrlTest = React.createClass({
   mixins: [FluxibleMixin, PureRenderMixin],
   statics: {storeListeners: [PageStore]},
   onChange: function(){},
   render: function() {
-    var ps = this.getStore("PageStore");
-    var redirectUriBase = document.location.protocol + "//" +
+    let ps = this.getStore("PageStore");
+    let redirectUriBase = document.location.protocol + "//" +
                       document.location.host +
                       this.getStore("PageStore").getLink("OAUTH_REDIRECT_BASE");
-    var redirectUri = redirectUriBase +
-            (redirectUriBase.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
+    let joiner = redirectUriBase.indexOf("?") === -1 ? "?" : "&";
+    let redirectUri = redirectUriBase + joiner + options.redirectParam;
 
     return (
       <table>
@@ -35,4 +36,4 @@ var UrlTest = React.createClass({
   }
 });
 
-module.exports = UrlTest
+module.exports = UrlTest;

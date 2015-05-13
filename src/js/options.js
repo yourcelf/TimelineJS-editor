@@ -1,7 +1,8 @@
+"use strict";
 /**
  * These options can be overridden by passing an object to the ``mhtEditor``
  * function, e.g.:
- * 
+ *
  *     mhtEditor({
  *       div: 'myDivId',
  *       clientId: '<google-client-id>',

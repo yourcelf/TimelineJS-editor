@@ -1,3 +1,4 @@
+"use strict";
 var _ = require("lodash");
 /**
  * Parse url params from the given querystring or URL.
@@ -17,7 +18,7 @@ module.exports.decodeParams = function(query) {
       decode = function (s) { return decodeURIComponent(s.replace(/\+/g, " ")); };
 
   var params = {};
-  /* jshint boss: true */
+  /* eslint-disable no-cond-assign */
   while (match = search.exec(query)) {
     if (match[2]) {
       // If we have an '=' sign, assign the value.
@@ -27,7 +28,7 @@ module.exports.decodeParams = function(query) {
       params[decode(match[1])] = undefined;
     }
   }
-  /* jshint boss: false */
+  /* eslint-enable no-cond-assign */
   return params;
 };
 

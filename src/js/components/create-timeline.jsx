@@ -1,14 +1,17 @@
-var React = require("react");
-var PureRenderMixin = require("react/addons").PureRenderMixin;
-var goog = require("../goog");
-var actions = require("../actions");
-var utils = require("../utils");
-var options = require("../options");
+"use strict";
+const React = require("react");
+const PureRenderMixin = require("react/addons").PureRenderMixin;
+const goog = require("../goog");
+const actions = require("../actions");
+const utils = require("../utils");
+const options = require("../options");
+const {Input, Col} = require("react-bootstrap");
+const Fa = require("./fa.jsx");
 
 /**
  * React component for a form for creating new timelines.
  */
-var CreateTimeline = React.createClass({
+const CreateTimeline = React.createClass({
   mixins: [PureRenderMixin],
   TEMPLATE_URL_PATTERNS: [
     /docs.google.com\/spreadsheet\/.*\?.*key=([^&#]+)/i,
@@ -23,7 +26,7 @@ var CreateTimeline = React.createClass({
     event.preventDefault();
     if (this.state.title && !this.state.templateUrlError) {
       this.setState({disableForm: true});
-      var that = this;
+      let that = this;
       goog.duplicateTemplate("Timeline: " + this.state.title, this.state.templateId).then(function(res) {
         that.props.context.executeAction(actions.setSpreadsheetId, res.id);
         that.props.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: res.id});
@@ -44,17 +47,17 @@ var CreateTimeline = React.createClass({
     this.setState({title: event.target.value});
   },
   handleTemplateUrlChange: function(event) {
-    var val = event.target.value;
+    let val = event.target.value;
     if (!val) {
       this.setState({
         templateUrl: "",
         templateId: null,
         templateUrlError: false
       });
-      return
+      return;
     }
-    for (var i = 0; i < this.TEMPLATE_URL_PATTERNS.length; i++) {
-      var match = this.TEMPLATE_URL_PATTERNS[i].exec(val);
+    for (let i = 0; i < this.TEMPLATE_URL_PATTERNS.length; i++) {
+      let match = this.TEMPLATE_URL_PATTERNS[i].exec(val);
       if (match) {
         this.setState({
           templateUrl: val, templateId: match[1], templateUrlError: false
@@ -71,9 +74,9 @@ var CreateTimeline = React.createClass({
   },
   render: function() {
     if (this.state.disableForm) {
-      return <div>Creating timeline... <i className='fa fa-spinner fa-spin' /></div>
+      return <div>Creating timeline... <Fa type='spinner spin' /></div>;
     } else {
-      var templateUrlHelp = "";
+      let templateUrlHelp = "";
       if (this.state.templateUrl === "") {
         templateUrlHelp = <span>
           If blank, the {' '}
@@ -83,38 +86,35 @@ var CreateTimeline = React.createClass({
       } else if (this.state.templateUrlError) {
         templateUrlHelp = "Please paste the URL to a google spreadsheet or a timeline hosted on this site.";
       }
+
       return (
-        <div className="six columns">
+        <Col sm={6}>
           <h1>Create Timeline</h1>
           <form onSubmit={this.handleSubmit}>
             <div>
-              <input type='text'
+              <Input type='text'
                      name='title'
                      placeholder='Timeline title'
                      value={this.state.title}
                      onChange={this.handleTitleChange}
-                     className="u-full-width"
                      required />
             </div>
-            <div>
-              <input type='url'
+            <div className={this.state.templateUrlError ? "has-error" : ""}>
+              <Input type='url'
                      name='templateUrl'
                      placeholder='Template to copy'
                      value={this.state.templateUrl}
                      onChange={this.handleTemplateUrlChange}
-                     className={"u-full-width" + (this.state.templateUrlError ? " error" : "")} />
-              <span className={'help-block' + (this.state.templateUrlError ? " error" : "")}>
-                {templateUrlHelp}
-              </span>
+                     help={templateUrlHelp} />
             </div>
             <div>
-              <button type='submit' className='mht-copy-template button-primary'>Create New Timeline</button>
+              <button type='submit' className='mht-copy-template btn btn-primary'>Create New Timeline</button>
             </div>
           </form>
-        </div>
+        </Col>
       );
     }
   }
 });
 
-module.exports = CreateTimeline
+module.exports = CreateTimeline;

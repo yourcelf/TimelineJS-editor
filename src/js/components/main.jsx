@@ -1,21 +1,22 @@
-var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-var React = require('react');
-var PureRenderMixin = require("react/addons").PureRenderMixin;
+"use strict";
+const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
+const React = require('react');
+const PureRenderMixin = require("react/addons").PureRenderMixin;
 // stores
-var UserStore = require('../stores/user');
-var SpreadsheetStore = require('../stores/spreadsheet');
-var PageStore = require('../stores/page');
+const UserStore = require('../stores/user');
+const SpreadsheetStore = require('../stores/spreadsheet');
+const PageStore = require('../stores/page');
 // components
-var Login = require('./login.jsx');
-var CreateTimeline = require('./create-timeline.jsx');
-var ReadTimeline = require("./read-timeline.jsx");
-var UpdateTimeline = require('./update-timeline.jsx');
-var UrlTest = require('./urltest.jsx');
+const Login = require('./login.jsx');
+const CreateTimeline = require('./create-timeline.jsx');
+const ReadTimeline = require("./read-timeline.jsx");
+const UpdateTimeline = require('./update-timeline.jsx');
+const UrlTest = require('./urltest.jsx');
 
 /**
  * Main container react component for the MHT Timeline Editor.
  */
-var Main = React.createClass({
+const Main = React.createClass({
   mixins: [FluxibleMixin, PureRenderMixin],
   statics: {
     storeListeners: [UserStore, PageStore, SpreadsheetStore]
@@ -24,8 +25,8 @@ var Main = React.createClass({
     return {
       loggedIn: this.getStore('UserStore').isLoggedIn(),
       hasSpreadsheet: this.getStore('SpreadsheetStore').hasSpreadsheet(),
-      page: this.getStore('PageStore').getPage(),
-    }
+      page: this.getStore('PageStore').getPage()
+    };
   },
   onChange: function(payload) {
     this.setState(this._getStateFromStores());
@@ -42,7 +43,7 @@ var Main = React.createClass({
     return this._getStateFromStores();
   },
   render: function() {
-    var main;
+    let main = null;
     // This is essentially a router -- we're using PageStore as the truth
     // source for the current page (it's also responsible for setting the URL).
     // Choose which main component to show based on the current page as
@@ -69,7 +70,7 @@ var Main = React.createClass({
       main = <CreateTimeline context={this.props.context} />;
     } else {
       // Page not found! Ruh-roh.
-      main = <div>Oops... An error happened! Code: woodchuck.</div>
+      main = <div>Oops... An error happened! Code: woodchuck.</div>;
     }
     return (
       <div className='mht-timeline-editor container'>
@@ -79,4 +80,4 @@ var Main = React.createClass({
   }
 });
 
-module.exports = Main
+module.exports = Main;

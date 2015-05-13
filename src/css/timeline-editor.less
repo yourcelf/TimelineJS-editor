@@ -1,36 +1,36 @@
-@import "../../bower_components/skeleton/css/normalize.css";
-@import "../../bower_components/skeleton/css/skeleton.css";
+@import "./bootstrap.less";
 @import "../../bower_components/font-awesome/css/font-awesome.css";
 @import "../../node_modules/pikaday/css/pikaday.css";
 
 .mht-timeline-editor {
-  .preview-iframe-container {
-    display: none;
-  }
-  @media (min-width: 550px) {
-    .preview-iframe-container {
-      display: block;
-      position: relative;
-      width: 100%;
-      iframe {
-        position: fixed;
-        right: 2rem;
-        top: 6rem;
-        box-shadow: 0px 0px 2px #000;
-      }
-    }
-  }
+  // Link colors
   a.nav-link {
     color: #222;
     font-weight: bold;
     text-decoration: none;
   }
+  a.delete-link { color: #333; text-decoration: none; }
+  a.delete-link:hover { background-color: red; color: white }
 
+  // Iframe holder
+  .preview-iframe-container {
+    display: block;
+    position: relative;
+    width: 100%;
+    iframe {
+      position: fixed;
+      right: 2rem;
+      top: 6rem;
+      box-shadow: 0px 0px 2px #000;
+    }
+  }
+
+  // Row form
   .row-number {
     display: block;
     font-size: 4rem;
   }
-  @media (min-width: 550px) {
+  @media (min-width: @screen-sm) {
     .row-number {
       display: inline-block;
       font-size: 4rem;
@@ -38,11 +38,11 @@
       left: -4rem;
     }
   }
-
   .edit-row-form {
     background-color: #eee;
     padding: 1em;
   }
+
   // Animation for adding/removing rows
   .edit-row-forms-enter {
     opacity: 0.01;
@@ -55,70 +55,9 @@
     &.edit-row-forms-leave-active { opacity: 0.01; }
   }
 
-  a.delete-link { color: #333; text-decoration: none; }
-  a.delete-link:hover { background-color: red; color: white }
-
-  .button-primary[disabled] {
-    background-color: #abb;
-    border-color: #abb;
-  }
-  input {
-    max-width: 100%;
-    &.error {
-      border-color: #900;
-    }
-  }
-
-  .help-block {
-    display: block;
-    margin-top: -1.5rem;
-    margin-bottom: 1.5rem;
-    padding-left: 0.5rem;
-    color: #aaa;
-    &.error {
-      color: #900;
-    }
-  }
-
-  .center-text {
-    text-align: center;
-  }
-  .right-text {
-    text-align: right;
-  }
   .perms-control {
     text-align: right;
     padding: 1rem;
     width: 100%;
   }
-  .button-block {
-    width: 100%;
-    max-width: 100%;
-  }
-  .button-huge {
-    font-size: 3rem;
-    padding: 0 4rem;
-    height: 6rem;
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
-    border: 0;
-  }
-
-  .social-links {
-    text-align: center;
-    a {
-      display: inline-block;
-      padding: 1em;
-      width: 2em;
-    }
-  }
-
 }

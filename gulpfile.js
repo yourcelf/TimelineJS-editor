@@ -1,18 +1,18 @@
 "use strict";
 
 var gulp = require('gulp');
+var babelify = require("babelify");
 var browserify = require('browserify');
 var browserSync = require("browser-sync");
-var babelify = require("babelify");
-var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
-var uglify = require('gulp-uglify');
-var less = require('gulp-less');
 var cssimport = require('gulp-cssimport');
-var gutil = require('gulp-util');
-var sourcemaps = require('gulp-sourcemaps');
-var jshint = require('gulp-jshint');
 var del = require('del');
+var eslint = require("gulp-eslint")
+var gutil = require('gulp-util');
+var less = require('gulp-less');
+var source = require('vinyl-source-stream');
+var sourcemaps = require('gulp-sourcemaps');
+var uglify = require('gulp-uglify');
 
 var NAME = require('./package.json').name;
 var VERSION = require('./package.json').version;
@@ -22,12 +22,12 @@ gulp.task('clean', function(done) {
   del([DEST], done);
 });
 
-var bundler =  browserify({
-  entries: ['./src/js/timeline-editor.js']
-}).transform(babelify);
-
 gulp.task('js', function() {
-  return bundler.bundle()
+  return browserify({
+      entries: ['./src/js/timeline-editor.js']
+    })
+    .transform(babelify)
+    .bundle()
     .pipe(source(NAME + ".min.js"))
     .pipe(buffer())
     .pipe(sourcemaps.init({loadMaps: true}))
@@ -37,7 +37,7 @@ gulp.task('js', function() {
 });
 
 gulp.task('css', function() {
-  return gulp.src(['src/**/*.less'])
+  return gulp.src(['src/*/timeline-editor.less'])
     .pipe(less())
     .pipe(cssimport())
     .pipe(gulp.dest(DEST))
@@ -55,15 +55,15 @@ gulp.task('html', function() {
     .pipe(gulp.dest(DEST));
 });
 
-gulp.task('jshint', function() {
-  return gulp.src('src/**/*.js')
-    .pipe(jshint())
-    .pipe(jshint.reporter('default'));
+gulp.task('lint', function() {
+  return gulp.src(['src/**/*.js', 'src/**/*.jsx'])
+    .pipe(eslint())
+    .pipe(eslint.format())
 
 });
 
-gulp.task('watch-jshint', ['jshint'], function() {
-  gulp.watch(['src/**/*.js'], ['jshint']);
+gulp.task('watch-lint', ['lint'], function() {
+  gulp.watch(['src/**/*.js*'], ['lint']);
 });
 
 gulp.task('watch', ['build'], function() {

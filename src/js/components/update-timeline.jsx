@@ -1,36 +1,39 @@
-var _ = require("lodash");
-var moment = require("moment");
-var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-var React = require("react");
-var ReactCSSTransitionGroup = require("react/addons").addons.CSSTransitionGroup;
+"use strict";
+const _ = require("lodash");
+const moment = require("moment");
+const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
+const React = require("react");
+const ReactCSSTransitionGroup = require("react/addons").addons.CSSTransitionGroup;
+const {Button, Row, Col} = require("react-bootstrap");
 
-var SpreadsheetStore = require("../stores/spreadsheet");
-var PageStore = require("../stores/page");
-var UserStore = require("../stores/user");
-var actions = require("../actions");
+const SpreadsheetStore = require("../stores/spreadsheet");
+const PageStore = require("../stores/page");
+const UserStore = require("../stores/user");
+const actions = require("../actions");
 
-var SoftLink = require("./soft-link.jsx");
-var RowEditor = require("./row-editor.jsx");
+const SoftLink = require("./soft-link.jsx");
+const RowEditor = require("./row-editor.jsx");
+const Fa = require("./fa.jsx");
 
 /**
  * React component for the main spreadsheet editor for timelines.
  */
-var UpdateTimeline = React.createClass({
+const UpdateTimeline = React.createClass({
   mixins: [FluxibleMixin],
   statics: {
     storeListeners: [SpreadsheetStore, PageStore, UserStore]
   },
   _getStateFromStores: function() {
-    var ps = this.getStore("PageStore");
-    var ss = this.getStore("SpreadsheetStore");
-    var us = this.getStore("UserStore");
+    let ps = this.getStore("PageStore");
+    let ss = this.getStore("SpreadsheetStore");
+    let us = this.getStore("UserStore");
     // FIXME: Doesn't feel right to update the state of SpreadsheetStore here..
     // is there a better way?  Can a Store obtain a reference to another Store?
     if (ss.getData().id !== ps.getTimelineId()) {
       this.props.context.executeAction(actions.setSpreadsheetId, ps.getTimelineId());
     }
     // Shallow copy the data/rows so we can do change comparison.
-    var data = _.clone(ss.getData());
+    let data = _.clone(ss.getData());
     data.rows = _.clone(data.rows);
     return {
       timelineId: ps.getTimelineId(),
@@ -38,7 +41,7 @@ var UpdateTimeline = React.createClass({
       previewUrlBase: 'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&height=650',
       data: data,
       anyoneCanEdit: ss.anyoneCanEdit()
-    }
+    };
 
 
 
@@ -49,11 +52,11 @@ var UpdateTimeline = React.createClass({
   },
   onChange: function(payload) {
     // Detect whether we've changed, and should reload the iframe.
-    var ss = this.getStore("SpreadsheetStore");
+    let ss = this.getStore("SpreadsheetStore");
     if (ss.error) {
       this.setState({error: ss.error});
     }
-    var dirty = false;
+    let dirty = false;
     if (this.state.data && payload.data && this.state.data.rows && payload.data.rows) {
       dirty = ss.spreadsheetsDiffer(this.state.data, payload.data);
     }
@@ -77,18 +80,20 @@ var UpdateTimeline = React.createClass({
     // Check if this update contains a row that we requested be created.  If
     // so, scroll that row into view and remove our state requesting that row.
     if (this.state._requestId && payload.data && payload.data.rows) {
-      for (var i = 0; i < payload.data.rows.length; i++) {
+      for (let i = 0; i < payload.data.rows.length; i++) {
         if (payload.data.rows[i]._requestId === this.state._requestId) {
           this.setState({_requestId: undefined});
           // Break closure for the row, and set timeout so we can wait till
           // the dom has repainted.
+          /* eslint-disable no-loop-func */
           (function(row) {
             setTimeout(function() {
-              var el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
+              let el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
               el.scrollIntoView();
               el.focus();
             }, 1);
-          })(payload.data.rows[i])
+          })(payload.data.rows[i]);
+          /* eslint-enable no-loop-func */
           break;
         }
       }
@@ -96,7 +101,7 @@ var UpdateTimeline = React.createClass({
   },
   reloadIframe: function() {
     // Add an arbitrary query param to force reload.
-    var newUrl = this.state.previewUrlBase + '&_v';
+    let newUrl = this.state.previewUrlBase + '&_v';
     console.log("Reload iframe!", newUrl);
     this.setState({previewUrlBase: newUrl});
   },
@@ -115,15 +120,16 @@ var UpdateTimeline = React.createClass({
   handleFocusRow: function(rowId) {
     // Given a rowId, find the date-sorted index to pass as the url hash to
     // the iframe.
-    var sortedRows = _.sortBy(this.state.data.rows, function(r) {
+    console.log("handleFocusRow", rowId);
+    let sortedRows = _.sortBy(this.state.data.rows, function(r) {
       return r._meta.startdateObj;
     });
-    for (var i = 0; i < sortedRows.length; i++) {
+    for (let i = 0; i < sortedRows.length; i++) {
       if (sortedRows[i].id === rowId) {
+        this.setState({focus: i});
         break;
       }
     }
-    this.setState({focus: i});
   },
   handleFocusShortUrl: function(event) {
     event.target.select();
@@ -135,11 +141,11 @@ var UpdateTimeline = React.createClass({
     // UI to scroll to it.  This is necessary due to the one-way rule in flux:
     // we don't get any direct callback from an action, just a general
     // ``onChange`` from the store.
-    var reqId = "" + Math.random();
+    let reqId = "" + Math.random();
     this.setState({_requestId: reqId});
 
     // Set the user's name and current date as defaults for the new row.
-    var us = this.getStore("UserStore");
+    let us = this.getStore("UserStore");
     this.props.context.executeAction(actions.editSpreadsheet, {
       action: "ADD_ROW",
       _requestId: reqId,
@@ -151,8 +157,8 @@ var UpdateTimeline = React.createClass({
   },
   toggleAnyoneCanEdit: function(event) {
     event.preventDefault();
-    var ss = this.getStore("SpreadsheetStore");
-    var target = !ss.anyoneCanEdit();
+    let ss = this.getStore("SpreadsheetStore");
+    let target = !ss.anyoneCanEdit();
     this.props.context.executeAction(actions.editSpreadsheet, {
       action: "SET_ANYONE_CAN_EDIT",
       anyoneCanEdit: target
@@ -175,11 +181,11 @@ var UpdateTimeline = React.createClass({
             <small><pre>{this.state.error.toString()}</pre></small>
           </div>
         </div>
-      )
+      );
     }
 
     // Editor rows
-    var rows = _.map(this.state.data.rows, function(row, i) {
+    let rows = _.map(this.state.data.rows, function(row, i) {
       return <RowEditor
                 {...this.props}
                 rowId={row.id}
@@ -190,76 +196,78 @@ var UpdateTimeline = React.createClass({
     }.bind(this));
 
     // Permissions display.
-    var permsDisplayText, permsButtonText;
+    let permsDisplayText, permsButtonText;
     if (this.state.anyoneCanEdit === null) {
       permsDisplayText = "";
-      permsButtonText = <i className='fa fa-spinner fa-spin' />
+      permsButtonText = <Fa type='spinner spin' />;
     } else if (this.state.anyoneCanEdit === true) {
-      permsDisplayText = <span><i className='fa fa-unlock fa-fw' />Anyone can edit this.</span>;
+      permsDisplayText = <span><Fa type='unlock fw' />Anyone can edit this.</span>;
       permsButtonText = "Lock it down";
     } else if (this.state.anyoneCanEdit === false) {
-      permsDisplayText = <span><i className='fa fa-lock fa-fw' />Only select users can edit this.</span>;
+      permsDisplayText = <span><Fa type='lock fw' />Only select users can edit this.</span>;
       permsButtonText = "Let anyone edit";
     }
     if (this.state._anyoneCanEditChange) {
-      permsButtonText = <i className='fa fa-spinner fa-spin' />
+      permsButtonText = <Fa type='spinner spin' />;
     }
 
     // Disabled state for "Add" button.
-    var addDisabled = {disabled: !!this.state._requestId};
+    let addDisabled = {disabled: !!this.state._requestId};
 
     // Source for the preview iframe
-    var iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
+    let iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
 
     // Page store for getting links.
-    var ps = this.getStore("PageStore");
+    let ps = this.getStore("PageStore");
 
     return (
-      <div className='row'>
-        <div className='six columns'>
-          <h1>Edit Timeline</h1>
-          <p>
-            Spreadsheet:{' '}
-            <a href={'https://docs.google.com/spreadsheet/ccc?key=' + this.state.timelineId}
-               className='nav-link'
-               target='_blank'>
-                {this.state.data.title} <i className='fa fa-external-link' />
-            </a>
-          </p>
-          <div>
-            <SoftLink {...this.props}
-              href={ps.getLink("READ", this.state.timelineId)}
-              className='button'
-              html={<span><i className='fa fa-link fa-fw' /> Share Timeline</span>} />
-            {
-              this.state.shortUrl ?
-              <input value={this.state.shortUrl} className='u-pull-right' type='text' readOnly onFocus={this.handleFocusShortUrl} />
-              : '' }
-          </div>
-          <div className='center-text'>
-            <button className='button-primary button-huge button-block' onClick={this.handleAddRow} {...addDisabled}>
-              { this.state._requestId ? <i className='fa fa-spinner fa-spin'></i> : '' }
+      <Row>
+        <Col sm={6}>
+          <Row>
+            <h1>Edit Timeline</h1>
+            <p>
+              Spreadsheet:{' '}
+              <a href={'https://docs.google.com/spreadsheet/ccc?key=' + this.state.timelineId}
+                 className='nav-link'
+                 target='_blank'>
+                  {this.state.data.title} <Fa type='external-link' />
+              </a>
+            </p>
+          </Row>
+          <Row>
+            <Col xs={6} className='text-right'>
+              <SoftLink {...this.props}
+                href={ps.getLink("READ", this.state.timelineId)}
+                className='btn btn-default'
+                html={<span><Fa type='link fw'/> Share Timeline</span>} />
+            </Col>
+            <Col xs={6} className='text-left'>
+              { this.state.shortUrl ? <input value={this.state.shortUrl} className='form-control' type='text' readOnly onFocus={this.handleFocusShortUrl} /> : '' }
+            </Col>
+          </Row>
+          <Row>
+            <button className='btn btn-primary btn-lg btn-block' onClick={this.handleAddRow} {...addDisabled}>
+              { this.state._requestId ? <Fa type='spinner spin' /> : '' }
               Add My Story
             </button>
-            <div className='u-cf'></div>
-          </div>
+          </Row>
 
           <ReactCSSTransitionGroup transitionName="edit-row-forms">
             {rows}
           </ReactCSSTransitionGroup>
+        </Col>
 
-        </div>
-        <div className='six columns'>
+        <Col sm={6} className='hidden-xs'>
           <p className='perms-control'>
             { permsDisplayText }{' '}
-            <button onClick={this.toggleAnyoneCanEdit}>{ permsButtonText }</button>
+            <button className='btn btn-default' onClick={this.toggleAnyoneCanEdit}>{ permsButtonText }</button>
           </p>
           <div className='preview-iframe-container'>
             <iframe id='timeline-preview' src={iframeSrc} height='650' width='40%' frameBorder='0'></iframe>
           </div>
-        </div>
-      </div>
+        </Col>
+      </Row>
     );
   }
 });
-module.exports = UpdateTimeline
+module.exports = UpdateTimeline;

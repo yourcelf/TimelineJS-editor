@@ -1,3 +1,4 @@
+"use strict";
 var goog = require("./goog");
 
 /*

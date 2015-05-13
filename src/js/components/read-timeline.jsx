@@ -1,21 +1,21 @@
-var React = require('react');
-var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-var PureRenderMixin = require("react/addons").PureRenderMixin;
-var _ = require('lodash');
-var PageStore = require('../stores/page');
-var actions = require('../actions');
+"use strict";
+const React = require('react');
+const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
+const PureRenderMixin = require("react/addons").PureRenderMixin;
+const _ = require('lodash');
+const PageStore = require('../stores/page');
+const actions = require('../actions');
+const Fa = require("./fa.jsx");
 
 /**
  * React component for a read-only view of timelines.
  */
-var ReadTimeline = React.createClass({
+const ReadTimeline = React.createClass({
   mixins: [FluxibleMixin, PureRenderMixin],
   statics: {storeListeners: [PageStore]},
   _getStateFromStores: function() {
-    var ps = this.getStore('PageStore');
-    return {
-      timelineId: ps.getTimelineId(),
-    }
+    let ps = this.getStore('PageStore');
+    return {timelineId: ps.getTimelineId()};
   },
   getInitialState: function() {
     return this._getStateFromStores();
@@ -36,8 +36,8 @@ var ReadTimeline = React.createClass({
     this.setState({showEmbed: !this.state.showEmbed});
   },
   render: function() {
-    var encUrl = encodeURIComponent(document.URL);
-    var icons = [
+    let encUrl = encodeURIComponent(document.URL);
+    let icons = [
       // [ Service name, icon class, URL ]
       ["Twitter", "twitter", `https://twitter.com/home?status=${encUrl}`],
       ["Facebook", "facebook", `https://www.facebook.com/sharer.php?u=${encUrl}`],
@@ -49,45 +49,46 @@ var ReadTimeline = React.createClass({
     // We're dangerously-set-inner-html-ifying this so that we can use it both
     // as a TextArea value and as the embed.  So be careful to escape any user
     // input in it (e.g. the timeline ID).
-    var embedCode = "<iframe src='https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?source=" + _.escape(this.state.timelineId) + "&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>"
+    let embedCode = "<iframe src='https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?source=" + _.escape(this.state.timelineId) + "&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>";
 
     return <div>
       <div dangerouslySetInnerHTML={{__html: embedCode}} />
-      <h2 className='center-text'>Share</h2>
-      <div className='social-links'>
+      <h2 className='text-center'>Share</h2>
+      <div className='social-links text-center'>
         {
-          icons.map(function(icon, i) {
-            return <a href={icon[2]}
-                      title={"Share with " + icon[0]}
-                      key={'sharing-icon-' + i}
-                      target='_blank'>
-              <i className={'fa fa-2x fa-' + icon[1]} />
-              <span className='sr-only'>{icon[0]}</span>
-            </a>;
-          })
+          icons.map((icon, i) => (
+              <a href={icon[2]}
+                 title={"Share with " + icon[0]}
+                 key={'sharing-icon-' + i}
+                 target='_blank'
+                 className='btn btn-default btn-lg'>
+                <Fa type={'2x ' + icon[1]} />
+                <span className='sr-only'>{icon[0]}</span>
+              </a>
+          ))
         }
       </div>
-      <div className='center-text'>
-        <button onClick={this.toggleEmbed}>
-          <i className={'fa fa-fw fa-'+(this.state.showEmbed ? 'caret-down' : 'caret-right')}/>
+      <div className='text-center'>
+        <button onClick={this.toggleEmbed} className='btn btn-default'>
+          <Fa type={'fw ' + (this.state.showEmbed ? 'caret-down' : 'caret-right')}/>
           Embed
         </button>
       </div>
-      <div className='center-text'>
+      <div className='text-center clearfix'>
         {
           this.state.showEmbed ? (
             <span>
-              Paste this code into your blog or website to embed this timeline there.
-              <textarea rows='4' cols='60' value={embedCode}
+              <p>Paste this code into your blog or website to embed this timeline there.</p>
+              <textarea className='form-control' rows='4' cols='60' value={embedCode}
                   onFocus={this.handleFocusTextarea} readOnly/>
             </span>
           ) : ""
         }
       </div>
-      <div className='center-text'>
-        <button onClick={this.handleNavEdit}>Edit Timeline</button> 
+      <div className='text-center'>
+        <button onClick={this.handleNavEdit} className='btn btn-default'>Edit Timeline</button>
       </div>
-    </div>
+    </div>;
   }
 });
-module.exports = ReadTimeline
+module.exports = ReadTimeline;

@@ -1,3 +1,4 @@
+"use strict";
 /** @module */
 require("es6-promise").polyfill();
 var options = require("./options");

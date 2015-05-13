@@ -1,24 +1,25 @@
-var _ = require("lodash");
-var React = require("react");
-var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-var PureRenderMixin = require("react/addons").PureRenderMixin;
-var DatePicker = require("./date-picker.jsx");
-var SpreadsheetStore = require("../stores/spreadsheet");
-
-var actions = require("../actions");
-
+"use strict";
+const _ = require("lodash");
+const React = require("react");
+const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
+const PureRenderMixin = require("react/addons").PureRenderMixin;
+const DatePicker = require("./date-picker.jsx");
+const SpreadsheetStore = require("../stores/spreadsheet");
+const actions = require("../actions");
+const {Input} = require("react-bootstrap");
+const Fa = require("./fa.jsx");
 
 /**
  * React component for a single row's editing form.
  */
-var RowEditor = React.createClass({
+const RowEditor = React.createClass({
   mixins: [FluxibleMixin, PureRenderMixin],
   statics: {
     storeListeners: [SpreadsheetStore]
   },
 
   getInitialState: function() {
-    this.ss = this.getStore("SpreadsheetStore")
+    this.ss = this.getStore("SpreadsheetStore");
     return {row: _.extend({}, this._getRowFromStore())};
   },
 
@@ -30,7 +31,7 @@ var RowEditor = React.createClass({
     // If it has, clobber the current state. NOTE: This means unsaved changes
     // in the current state will be lost.
     if (payload && payload.data && payload.data.rows) {
-      var row = _.find(payload.data.rows, function(r) {
+      let row = _.find(payload.data.rows, function(r) {
         return r.id === this.props.rowId;
       }.bind(this));
       if (row) {
@@ -50,9 +51,9 @@ var RowEditor = React.createClass({
   checkDirty: function() {
     // Check if the current state differs from that stored in the
     // SpreadsheetStore.
-    var storeRow = this._getRowFromStore();
-    var dirty = this.ss.rowsDiffer(storeRow, this.state.row);
-    var update = {dirty: dirty};
+    let storeRow = this._getRowFromStore();
+    let dirty = this.ss.rowsDiffer(storeRow, this.state.row);
+    let update = {dirty: dirty};
     if (!dirty && this.state.saving) {
       update.saving = false;
     }
@@ -67,7 +68,7 @@ var RowEditor = React.createClass({
       onChange: function(event) {
         // Handle change of an input: set the state, and check dirty.
         if (event.target.value !== this.state.row[attr]) {
-          var newRow = _.extend({}, this.state.row);
+          let newRow = _.extend({}, this.state.row);
           newRow[attr] = event.target.value;
           this.setState({row: newRow});
           // Trigger onChange to update dirty state.  Run on next tick to
@@ -76,7 +77,9 @@ var RowEditor = React.createClass({
         }
       }.bind(this),
       onFocus: function() {
-        this.props.onFocus && this.props.onFocus(this.props.rowId);
+        if (this.props.onFocus) {
+          this.props.onFocus(this.props.rowId);
+        }
       }.bind(this)
     };
   },
@@ -84,94 +87,84 @@ var RowEditor = React.createClass({
   // text input. That means that its body is partially duplicated from the
   // ``getInputProps`` used by everything else.
   handleTitleTypeChange: function(event) {
-    var newRow = _.extend({}, this.state.row);
-    newRow.type =  event.target.checked ? "title" : "";
+    let newRow = _.extend({}, this.state.row);
+    newRow.type = event.target.checked ? "title" : "";
     this.setState({row: newRow});
     setTimeout(function() { this.checkDirty(); }.bind(this), 1);
-    this.props.onFocus && this.props.onFocus(this.props.rowId);
+    if (this.props.onFocus) {
+      this.props.onFocus(this.props.rowId);
+    }
   },
   handleSubmit: function(event) {
     event.preventDefault();
     // Fire action for EDIT_SPREADSHEET_ROW, sending changes in this.state.row.
     this.setState({saving: true});
-    var payload = {action: "CHANGE_ROW", row: this.state.row};
+    let payload = {action: "CHANGE_ROW", row: this.state.row};
     this.props.context.executeAction(actions.editSpreadsheet, payload);
   },
   handleDelete: function(event) {
     event.preventDefault();
     this.setState({deleting: true});
+    /* eslint-disable no-alert */
     if (confirm("Are you sure you want to delete this entry?")) {
-      var payload = {action: "DELETE_ROW", row: this.state.row};
+      let payload = {action: "DELETE_ROW", row: this.state.row};
       this.props.context.executeAction(actions.editSpreadsheet, payload);
     }
+    /* eslint-enable no-alert */
   },
   render: function() {
-    var disableSubmit = { disabled: (this.state.saving || !this.state.dirty) };
+    let disableSubmit = { disabled: (this.state.saving || !this.state.dirty) };
+    let inputCols = {labelClassName: 'col-xs-3', wrapperClassName: 'col-xs-9'};
     return (
-      <form className='edit-row-form'
+      <form className='edit-row-form form-horizontal'
             onSubmit={this.handleSubmit}
             data-row-id={this.props.rowId}>
         <span className='row-number'>{this.props.rowIndex + 1}</span>
         <div className='row'>
-          <div className='six columns'>
-            <label>Start Date</label>
-            <DatePicker {...this.getInputProps("startdate")}
-              value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
-              />
+          <div className='col-sm-6'>
+            <label className='control-label col-sm-4'>Start Date</label>
+            <div className='controls col-sm-8'>
+              <DatePicker {...this.getInputProps("startdate")}
+                className='form-control'
+                value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
+                />
+            </div>
           </div>
-          <div className='six columns'>
-            <label>End Date</label>
-            <DatePicker {...this.getInputProps("enddate")}
-              value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
-              />
+          <div className='col-sm-6'>
+            <label className='control-label col-sm-4'>End Date</label>
+            <div className='controls col-sm-8'>
+              <DatePicker {...this.getInputProps("enddate")}
+                className='form-control'
+                value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
+                />
+            </div>
           </div>
         </div>
-        <div>
-          <label>Headline</label>
-          <input {...this.getInputProps("headline")} type='text' className='u-full-width' />
-        </div>
-        <div>
-          <label>Text</label>
-          <textarea {...this.getInputProps("text")} rows='4' cols='40' className='u-full-width'/>
-        </div>
-        <div>
-          <label>Media</label>
-          <input {...this.getInputProps("media")} type='url' className='u-full-width' />
-        </div>
-        <div>
-          <label>Media Credit</label>
-          <input {...this.getInputProps("mediacredit")} type='text' className='u-full-width' />
-        </div>
-        <div>
-          <label>Media Thumbnail URL</label>
-          <input {...this.getInputProps("mediathumbnail")} type='url' className='u-full-width' />
-        </div>
+        <Input type='text' label='Headline' {...this.getInputProps("headline")} {...inputCols} />
+        <Input type='textarea' label='Text' {...this.getInputProps("text")} {...inputCols} />
+        <Input type='url' label='Media' {...this.getInputProps("media")} {...inputCols} />
+        <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
+        <Input type='url' label='Media Thumbnail URL' {...this.getInputProps("mediathumbnail")} {...inputCols} />
         <div className='row'>
-          <div className='four columns'>
-            <label>
-              Title slide{' '}
-              <input value='title' name='type' type='checkbox'
-                checked={this.state.row.type === 'title'}
-                onChange={this.handleTitleTypeChange} />
-            </label>
+          <div className='col-sm-4'>
+            <Input type='checkbox' label='Title slide'
+                   checked={this.state.row.type === 'title'}
+                   onChange={this.handleTitleTypeChange} />
           </div>
-          <div className='eight columns'>
-            <label>
-                Tag{' '}
-                <input {...this.getInputProps("tag")} type='text' />
-            </label>
+          <div className='col-sm-8'>
+            <Input type='text' label='Tag' {...this.getInputProps("tag")} {...inputCols} />
           </div>
         </div>
         <div className='row'>
-          <div className='six columns'>
-            <button type='submit' className='button-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
-              {this.state.saving ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+          <div className='col-sm-6'>
+            <button type='submit' className='btn btn-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
+              {this.state.saving ? <Fa type='spinner fw spin' /> : ""}
               Save
             </button>
           </div>
-          <div className='six columns'>
-            <a className='u-pull-right button delete-link' href='#' onClick={this.handleDelete}>
-              {this.state.deleting ? <i className='fa fa-spinner fa-fw fa-spin' /> : ""}
+          <div className='col-sm-6'>
+            <a className='pull-right btn delete-link' href='#' onClick={this.handleDelete}>
+              {this.state.deleting ? <Fa type='spinner fw spin' /> : ""}
               Delete
             </a>
           </div>
@@ -181,4 +174,4 @@ var RowEditor = React.createClass({
   }
 });
 
-module.exports = RowEditor
+module.exports = RowEditor;

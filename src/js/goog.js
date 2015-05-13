@@ -1,14 +1,16 @@
-var utils = require("./utils");
-var options = require("./options");
-var superagent = require("superagent");
-var moment = require("moment");
-var _ = require("lodash");
+"use strict";
+/*global gapi*/
+const utils = require("./utils");
+const options = require("./options");
+const superagent = require("superagent");
+const moment = require("moment");
+const _ = require("lodash");
 
-var spreadsheetsBase = "https://spreadsheets.google.com";
-var spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetsBase;
+const spreadsheetsBase = "https://spreadsheets.google.com";
+const spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetsBase;
 
 /** URLs endpoints for API requests. */
-var URLS = {
+const URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
   'rowsFeed': spreadsheetsProxyBase + '/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
@@ -17,7 +19,7 @@ var URLS = {
 };
 
 /** Authorization scopes for Google */
-var SCOPES = [
+const SCOPES = [
   // For the creation and permission setting of spreadsheets
   "https://www.googleapis.com/auth/drive",
   // For row read, update and delete operations
@@ -29,7 +31,7 @@ var SCOPES = [
 ];
 
 /** Spreadsheet column names and order */
-var COLUMNS = [
+const COLUMNS = [
   "startdate", "enddate", "headline", "text",
   "media", "mediacredit", "mediathumbnail",
   "type", "tag"
@@ -49,9 +51,9 @@ module.exports.bootstrap = function() {
         window.gapiBootstrapCallback = null;
         resolve();
       };
-      var scripts = document.getElementsByTagName("script");
-      var curScript = scripts[scripts.length - 1];
-      var gapiScript = document.createElement("script");
+      let scripts = document.getElementsByTagName("script");
+      let curScript = scripts[scripts.length - 1];
+      let gapiScript = document.createElement("script");
       gapiScript.src = "https://apis.google.com/js/client.js?onload=gapiBootstrapCallback";
       gapiScript.async = false;
       curScript.parentNode.insertBefore(gapiScript, curScript.nextSibling);
@@ -74,7 +76,7 @@ module.exports.authorize = function() {
     gapi.auth.authorize({
       "client_id": options.clientId,
       "scope": SCOPES.join(" "),
-      "immediate": true,
+      "immediate": true
     }, function(authResult) {
       if (authResult) {
         if (authResult.error) {
@@ -103,7 +105,7 @@ module.exports.authorize = function() {
  */
 module.exports.shortenUrl = function(longUrl) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
     superagent.post(URLS.shortener + "?access_token=" + token.access_token + "&alt=json")
@@ -113,7 +115,7 @@ module.exports.shortenUrl = function(longUrl) {
           return reject(err);
         }
         try {
-          var data = JSON.parse(res.text);
+          let data = JSON.parse(res.text);
           return resolve(data.id);
         } catch (e) {
           return reject(e);
@@ -130,7 +132,7 @@ module.exports.shortenUrl = function(longUrl) {
  */
 module.exports.getUserProfile = function() {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
     superagent.get(URLS.profile + "?access_token=" + token.access_token + "&alt=json")
@@ -139,7 +141,7 @@ module.exports.getUserProfile = function() {
           return reject(err);
         }
         try {
-          var profile = JSON.parse(res.text);
+          let profile = JSON.parse(res.text);
           return resolve(profile);
         } catch (e) {
           return reject(e);
@@ -150,26 +152,26 @@ module.exports.getUserProfile = function() {
 
 /**
  * Show a popup window which prompts the user to authorize their google account
- * for {@link SCOPES}. 
+ * for {@link SCOPES}.
  *
  * @return {Promise} A promise which resolves with the auth token once the user
  * has logged in.
  */
 module.exports.popupLogin = function(redirectUriBase) {
   return new Promise(function(resolve, reject) {
-    var e = encodeURIComponent;
+    let e = encodeURIComponent;
     redirectUriBase = redirectUriBase || document.URL;
-    var redirectUri = redirectUriBase +
+    let redirectUri = redirectUriBase +
       (redirectUriBase.indexOf("?") === -1 ? "?" : "&") + options.redirectParam;
-    
-    var oauthUrl = URLS.oauth +
+
+    let oauthUrl = URLS.oauth +
         "?scope=" + e(SCOPES.join(" ")) +
         "&redirect_uri=" + e(redirectUri) +
         "&client_id=" + e(options.clientId) +
         "&response_type=token";
-    var win = window.open(oauthUrl);
-    var pollTimer = setInterval(function() {
-      var popupUrl;
+    let win = window.open(oauthUrl);
+    let pollTimer = setInterval(function() {
+      let popupUrl;
       try {
         popupUrl = win.document.URL;
       } catch (e) {
@@ -179,17 +181,22 @@ module.exports.popupLogin = function(redirectUriBase) {
 
       if (popupUrl.indexOf(redirectUri) !== -1) {
         clearInterval(pollTimer);
-        var url = win.document.URL;
-        var hash = url.split("#")[1] || "";
-        var params = utils.decodeParams(hash);
+        let url = win.document.URL;
+        let hash = url.split("#")[1] || "";
+        let params = utils.decodeParams(hash);
 
-        var token = {
+        /* eslint-disable camelcase */
+        // Better to consistently use the external API's convention than to
+        // appease strictness of eslint.
+        let token = {
           access_token: params.access_token,
           token_type: params.token_type,
           expires_in: params.expires_in
         };
+        /* eslint-enable camelcase */
         if (!(token.access_token && token.token_type && token.expires_in)) {
-          return reject(new Error("Missing token parameters: " + url));
+          reject(new Error("Missing token parameters: " + url));
+          return;
         }
         gapi.auth.setToken(token);
         resolve(token);
@@ -208,10 +215,10 @@ module.exports.popupLogin = function(redirectUriBase) {
  * ommitted, the default templateId defined in options will be used.
  */
 module.exports.duplicateTemplate = function(title, templateId) {
-  var spreadsheetRes;
+  let spreadsheetRes;
   return new Promise(function(resolve, reject) {
     gapi.client.load('drive', 'v2', function() {
-      var req = gapi.client.drive.files.copy({
+      let req = gapi.client.drive.files.copy({
         fileId: templateId || options.templateId,
         resource: {
           "description": "Timeline JS template copy",
@@ -236,7 +243,7 @@ module.exports.duplicateTemplate = function(title, templateId) {
 
 /**
  * Set a given spreadsheet to be "Published to the web", so that it can be
- * retrieved by unauthenticated users for use as the data source for a timeline. 
+ * retrieved by unauthenticated users for use as the data source for a timeline.
  *
  * @param {string} spreadsheetId - The google file ID for the spreadsheet to
  * publish.
@@ -246,7 +253,7 @@ module.exports.duplicateTemplate = function(title, templateId) {
 module.exports.publishSpreadsheet = function(spreadsheetId) {
   return new Promise(function(resolve, reject) {
     gapi.client.load('drive', 'v2', function() {
-      var req = gapi.client.drive.revisions.update({
+      let req = gapi.client.drive.revisions.update({
         fileId: spreadsheetId,
         revisionId: "head",
         resource: {
@@ -269,12 +276,12 @@ module.exports.publishSpreadsheet = function(spreadsheetId) {
 module.exports.addAnyoneCanEdit = function(spreadsheetId) {
   return new Promise(function(resolve, reject) {
     gapi.client.load('drive', 'v2', function() {
-      var req = gapi.client.drive.permissions.insert({
+      let req = gapi.client.drive.permissions.insert({
         fileId: spreadsheetId,
         resource: {
           id: "anyone",
           type: "anyone",
-          role: "writer",
+          role: "writer"
         }
       });
       req.execute(resolve);
@@ -294,11 +301,11 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
     console.log(spreadsheetId);
     gapi.client.load('drive', 'v2', function() {
       try {
-        var req = gapi.client.drive.permissions.update({
+        let req = gapi.client.drive.permissions.update({
           fileId: spreadsheetId,
           permissionId: "anyone",
           type: "anyone",
-          role: "reader",
+          role: "reader"
         });
         req.execute(function(res) {
           if (!(res.role === "reader" && res.id === "anyone")) {
@@ -311,23 +318,6 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
       }
     });
   });
-};
-
-// Attempt to parse a date of whatever format seen in a google spreadsheet.
-// Note that this will raise a warning from moment as it falls back to ``new
-// Date`` as a constructor.  This is OK.
-var parseDate = function(str) {
-  if (!(str.trim && str.trim())) {
-    return null;
-  }
-  var formats = [undefined, "MM-DD-YYY"];
-  for (var i = 0; i < formats.length; i++) {
-    var d = moment(str, formats[i]);
-    if (d.isValid()) {
-      return d;
-    }
-  }
-  return null;
 };
 
 /**
@@ -347,7 +337,7 @@ module.exports.fetchSpreadsheet = function(spreadsheetId) {
     _.extend(data, worksheetInfo);
     return module.exports.getWorksheetRows(spreadsheetId, data.worksheetId);
   }).then(function(rowInfo) {
-    _.extend(data, rowInfo); 
+    _.extend(data, rowInfo);
     return data;
   });
 };
@@ -385,6 +375,9 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
         "?access_token=" + token.access_token + "&alt=json";
 
     superagent.get(url, function(err, res) {
+      if (err) {
+        return reject(err);
+      }
       if (res.status !== 200) {
         return reject(res);
       }
@@ -420,6 +413,9 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
         .replace("WORKSHEET_ID", worksheetId) +
         "?access_token=" + token.access_token + "&alt=json";
     superagent.get(url, function(err, res) {
+      if (err) {
+        return reject(err);
+      }
       try {
         var data = JSON.parse(res.text);
         return resolve({rows: _.map(data.feed.entry, _spreadsheetRowToObj)});
