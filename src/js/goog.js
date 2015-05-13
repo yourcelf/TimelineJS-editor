@@ -384,7 +384,7 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
     var url = URLS.worksheetFeed.replace("SPREADSHEET_ID", spreadsheetId) +
         "?access_token=" + token.access_token + "&alt=json";
 
-    superagent.get(url, function(res) {
+    superagent.get(url, function(err, res) {
       if (res.status !== 200) {
         return reject(res);
       }
@@ -419,7 +419,7 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
         .replace("SPREADSHEET_ID", spreadsheetId)
         .replace("WORKSHEET_ID", worksheetId) +
         "?access_token=" + token.access_token + "&alt=json";
-    superagent.get(url, function(res) {
+    superagent.get(url, function(err, res) {
       try {
         var data = JSON.parse(res.text);
         return resolve({rows: _.map(data.feed.entry, _spreadsheetRowToObj)});

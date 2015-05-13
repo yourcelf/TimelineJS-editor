@@ -1,6 +1,6 @@
 var _ = require("lodash");
 var moment = require("moment");
-var FluxibleMixin = require('fluxible').Mixin
+var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
 var React = require("react");
 var ReactCSSTransitionGroup = require("react/addons").addons.CSSTransitionGroup;
 

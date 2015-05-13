@@ -1,5 +1,5 @@
-var FluxibleMixin = require('fluxible').Mixin
 var React = require('react');
+var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
 var PureRenderMixin = require("react/addons").PureRenderMixin;
 var _ = require('lodash');
 var PageStore = require('../stores/page');

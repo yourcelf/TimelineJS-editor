@@ -1,6 +1,6 @@
 var _ = require("lodash");
 var React = require("react");
-var FluxibleMixin = require('fluxible').Mixin
+var FluxibleMixin = require('fluxible/addons/FluxibleMixin');
 var PureRenderMixin = require("react/addons").PureRenderMixin;
 var DatePicker = require("./date-picker.jsx");
 var SpreadsheetStore = require("../stores/spreadsheet");
