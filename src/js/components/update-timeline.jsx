@@ -27,6 +27,29 @@ const resolveScriptRelativePath = function(sourceName, path) {
   }
 };
 
+const sortTimelineRows = function(rows) {
+  let clone = _.clone(rows);
+  clone.sort((a, b) => {
+    let sortKeys = (d) => [
+      d.type === "title" ? 0 : 1,
+      d._meta.startdateObj ? d._meta.startdateObj.valueOf() : null
+    ];
+    let aKeys = sortKeys(a);
+    let bKeys = sortKeys(b);
+    for (var i = 0; i < aKeys.length; i++) {
+      if (aKeys[i] === bKeys[i]) {
+        continue;
+      } else if (aKeys[i] < bKeys[i]) {
+        return -1;
+      } else {
+        return 1;
+      }
+    }
+    return 0;
+  });
+  return clone;
+};
+
 /**
  * React component for the main spreadsheet editor for timelines.
  */
@@ -140,9 +163,7 @@ const UpdateTimeline = React.createClass({
     // Given a rowId, find the date-sorted index to pass as the url hash to
     // the iframe.
     logger.debug("handleFocusRow", rowId);
-    let sortedRows = _.sortBy(this.state.data.rows, function(r) {
-      return r._meta.startdateObj;
-    });
+    let sortedRows = sortTimelineRows(this.state.data.rows);
     for (let i = 0; i < sortedRows.length; i++) {
       if (sortedRows[i].id === rowId) {
         this.setState({focus: i});
@@ -182,9 +203,7 @@ const UpdateTimeline = React.createClass({
     let iframe = document.getElementById('timeline-preview');
     let current = parseInt(iframe.contentWindow.document.location.hash.replace('#', ''));
     if (!isNaN(current) && _.isNumber(current)) {
-      let sortedRows = _.sortBy(this.state.data.rows, function(r) {
-        return r._meta.startdateObj;
-      });
+      let sortedRows = sortTimelineRows(this.state.data.rows);
       let rowId = sortedRows[current].id;
       this.setState({modalRowId: rowId, focus: current});
     }

@@ -8557,6 +8557,10 @@ button.close {
 .modal-dialog .container {
   width: auto;
 }
+.mht-timeline-editor .pick-a-date,
+.modal-dialog .pick-a-date {
+  max-width: 8em;
+}
 .tooltip {
   font-weight: bold;
 }

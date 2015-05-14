@@ -166,26 +166,42 @@ const SpreadsheetStore = createStore({
     if (!(str && str.trim && str.trim())) {
       return null;
     }
-    let formats = [undefined, "MM-DD-YY", "M-D-YYYY"];
+    let baseDate = [["MM", "DD", "YY"], ["M", "D", "YYYY"], ["YYYY"], ["YYYY", "MM", "DD"]];
+    let baseTime = [["H", "mm", "ss"], ["h", "mm", "ss"], ["H", "mm"], ["h", "mm"]];
+    let dateSeparators = ["/", "-"];
+    let timeSeparators = [":"];
+    let formats = [];
+    // All combinations of dates with and without times.
+    dateSeparators.forEach((dsep) => {
+      baseDate.forEach((date) => formats.push(date.join(dsep)));
+      timeSeparators.forEach((tsep) => {
+        baseTime.forEach((time) => {
+          baseDate.forEach((date) => {
+            formats.push(`${date.join(dsep)} ${time.join(tsep)}`);
+          });
+        });
+      });
+    });
     for (let i = 0; i < formats.length; i++) {
-      let d = moment(str, formats[i]);
+      let d = moment(str, formats[i], true);
       if (d.isValid()) {
         return d;
       }
     }
-    return null;
+    // fallback to native browser date.
+    return new Date(str);
   },
   _fetchRows: function() {
     console.log("fetch rows");
     this.error = null;
     if (this.data.id) {
       goog.fetchSpreadsheet(this.data.id)
-        .then(function(data) {
-          console.log("rows fetched");
+        .then((data) => {
+          console.log("rows fetched", data);
           _.extend(this.data, data);
           this._setData(this.data);
           this.emitChange();
-        }.bind(this))
+        })
         .catch(this.handleApiError.bind(this));
     } else {
       this.data = {};
