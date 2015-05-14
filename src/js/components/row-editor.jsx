@@ -8,6 +8,7 @@ const SpreadsheetStore = require("../stores/spreadsheet");
 const actions = require("../actions");
 const {Input} = require("react-bootstrap");
 const Fa = require("./fa.jsx");
+const TooltipFa = require("./tooltip-fa.jsx");
 
 /**
  * React component for a single row's editing form.
@@ -101,6 +102,9 @@ const RowEditor = React.createClass({
     this.setState({saving: true});
     let payload = {action: "CHANGE_ROW", row: this.state.row};
     this.props.context.executeAction(actions.editSpreadsheet, payload);
+    if (this.props.onSave) {
+      this.props.onSave();
+    }
   },
   handleDelete: function(event) {
     event.preventDefault();
@@ -119,54 +123,84 @@ const RowEditor = React.createClass({
       <form className='edit-row-form form-horizontal'
             onSubmit={this.handleSubmit}
             data-row-id={this.props.rowId}>
-        <span className='row-number'>{this.props.rowIndex + 1}</span>
-        <div className='row'>
-          <div className='col-sm-6'>
-            <label className='control-label col-sm-4'>Start Date</label>
-            <div className='controls col-sm-8'>
-              <DatePicker {...this.getInputProps("startdate")}
-                className='form-control'
-                value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
-                />
+        <div className='container'>
+          { _.isNumber(this.props.rowIndex) ? <span className='row-number'>{this.props.rowIndex + 1}</span> : "" }
+          <div className='form-group'>
+            <label className={`control-label ${inputCols.labelClassName}`}>
+              Dates
+            </label>
+            <div className={inputCols.wrapperClassName}>
+              <div className='form-inline'>
+                <label>Start</label>{' '}
+                <DatePicker {...this.getInputProps("startdate")}
+                  className='form-control'
+                  value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
+                  />{' '}
+                <label>End</label>{' '}
+                <DatePicker {...this.getInputProps("enddate")}
+                  className='form-control'
+                  value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
+                  />
+              </div>
             </div>
           </div>
-          <div className='col-sm-6'>
-            <label className='control-label col-sm-4'>End Date</label>
-            <div className='controls col-sm-8'>
-              <DatePicker {...this.getInputProps("enddate")}
-                className='form-control'
-                value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
-                />
+
+          <Input type='text' label='Headline' {...this.getInputProps("headline")} {...inputCols} />
+          <Input type='textarea' label='Text' {...this.getInputProps("text")} {...inputCols} />
+          <div className='form-group'>
+            <label className={`control-label ${inputCols.labelClassName}`}>Media</label>
+            <div className={inputCols.wrapperClassName}>
+              <div className='media-link-list'>
+                Any link to:
+                <TooltipFa type="fw image" title="Images, gifs, pngs, jpgs" />
+                <TooltipFa type="fw flickr" title="Flickr" />
+                <TooltipFa type="fw instagram" title="Instagram" />
+                <TooltipFa type="fw twitter" title="Twitter" />
+                <TooltipFa type="fw vine" title="Vine" />
+                <TooltipFa type="fw youtube" title="Youtube" />
+                <TooltipFa type="fw vimeo-square" title="Vimeo" />
+                <TooltipFa type="fw map-marker" title="Google Maps" />
+                <TooltipFa type="fw google-plus" title="Google+" />
+                <TooltipFa type="fw file-excel-o" title="Google Docs" />
+                <TooltipFa type="fw soundcloud" title="Soundcloud" />
+                <TooltipFa type="fw globe" title="The Internets" />
+              </div>
+              <input className='form-control' type='url' {...this.getInputProps("media")} />
             </div>
           </div>
-        </div>
-        <Input type='text' label='Headline' {...this.getInputProps("headline")} {...inputCols} />
-        <Input type='textarea' label='Text' {...this.getInputProps("text")} {...inputCols} />
-        <Input type='url' label='Media' {...this.getInputProps("media")} {...inputCols} />
-        <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
-        <Input type='url' label='Media Thumbnail URL' {...this.getInputProps("mediathumbnail")} {...inputCols} />
-        <div className='row'>
-          <div className='col-sm-4'>
-            <Input type='checkbox' label='Title slide'
-                   checked={this.state.row.type === 'title'}
-                   onChange={this.handleTitleTypeChange} />
+          <Input type='url' label='Media' {...this.getInputProps("media")} {...inputCols} />
+          <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
+          <Input type='url' label='Media Thumbnail URL' {...this.getInputProps("mediathumbnail")} {...inputCols} />
+          <div className='form-group'>
+            <div className={inputCols.labelClassName}/>
+            <div className={inputCols.wrapperClassName}>
+              <div className='form-inline'>
+                <label>
+                  <input type='checkbox' checked={this.state.row.type === 'title'}
+                         onChange={this.handleTitleTypeChange} />
+                  Title slide
+                </label>
+                {' '}
+                <div className='pull-right'>
+                  <label>Tag</label>{' '}
+                  <input className='form-control' {...this.getInputProps("tag")} />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className='col-sm-8'>
-            <Input type='text' label='Tag' {...this.getInputProps("tag")} {...inputCols} />
-          </div>
-        </div>
-        <div className='row'>
-          <div className='col-sm-6'>
-            <button type='submit' className='btn btn-primary' onSubmit={this.handleSubmit} {...disableSubmit}>
-              {this.state.saving ? <Fa type='spinner fw spin' /> : ""}
-              Save
-            </button>
-          </div>
-          <div className='col-sm-6'>
-            <a className='pull-right btn delete-link' href='#' onClick={this.handleDelete}>
-              {this.state.deleting ? <Fa type='spinner fw spin' /> : ""}
-              Delete
-            </a>
+          <div className='form-group'>
+            <div className={inputCols.labelClassName}/>
+            <div className={inputCols.wrapperClassName}>
+              <button type='submit' className='btn btn-primary'
+                      onSubmit={this.handleSubmit} {...disableSubmit}>
+                {this.state.saving ? <Fa type='spinner fw spin' /> : ""}
+                Save
+              </button>
+              <a className='pull-right btn delete-link' href='#' onClick={this.handleDelete}>
+                {this.state.deleting ? <Fa type='spinner fw spin' /> : ""}
+                Delete
+              </a>
+            </div>
           </div>
         </div>
       </form>

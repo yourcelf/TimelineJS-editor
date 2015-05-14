@@ -15,6 +15,7 @@ const logger = require("../logger");
 
 const SoftLink = require("./soft-link.jsx");
 const RowEditor = require("./row-editor.jsx");
+const ModalRowEditor = require("./modal-row-editor.jsx");
 const Fa = require("./fa.jsx");
 
 /**
@@ -82,22 +83,14 @@ const UpdateTimeline = React.createClass({
     // so, scroll that row into view and remove our state requesting that row.
     // XXX open the modal instead
     if (this.state._requestId && payload.data && payload.data.rows) {
-      for (let i = 0; i < payload.data.rows.length; i++) {
-        if (payload.data.rows[i]._requestId === this.state._requestId) {
-          this.setState({_requestId: undefined});
-          // Break closure for the row, and set timeout so we can wait till
-          // the dom has repainted.
-          /* eslint-disable no-loop-func */
-          (function(row) {
-            setTimeout(function() {
-              let el = document.querySelector("[data-row-id='" + row.id + "'] [name=headline]");
-              el.scrollIntoView();
-              el.focus();
-            }, 1);
-          })(payload.data.rows[i]);
-          /* eslint-enable no-loop-func */
-          break;
-        }
+      let rowIndex = _.findIndex(payload.data.rows, "_requestId", this.state._requestId);
+      if (rowIndex !== -1) {
+        let row = payload.data.rows[rowIndex];
+        this.setState({
+          _requestId: undefined,
+          focus: rowIndex,
+          modalRowId: row.id
+        });
       }
     }
   },
@@ -120,7 +113,7 @@ const UpdateTimeline = React.createClass({
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
-    this.getStore("SpreadsheetStore").beginPolling();
+    //XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
     // Get the short URL.
     this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
       this.setState({shortUrl: shortUrl});
@@ -169,6 +162,9 @@ const UpdateTimeline = React.createClass({
       }
     });
   },
+  clearModal: function(event) {
+    this.setState({modalRowId: undefined});
+  },
   toggleAnyoneCanEdit: function(event) {
     event.preventDefault();
     let ss = this.getStore("SpreadsheetStore");
@@ -201,16 +197,11 @@ const UpdateTimeline = React.createClass({
       );
     }
 
-    // Editor rows
-    let rows = _.map(this.state.data.rows, function(row, i) {
-      return <RowEditor
-                {...this.props}
-                rowId={row.id}
-                rowIndex={row._meta.index}
-                key={"roweditor-" + i}
-                onFocus={this.handleFocusRow}
-              />;
-    }.bind(this));
+    // Editor rows for sidebar
+    let rows = _.map(this.state.data.rows, (row, i) => (
+      <RowEditor {...this.props} rowId={row.id} rowIndex={row._meta.index}
+                 key={"roweditor-" + i} onFocus={this.handleFocusRow} />
+    ));
 
     // Permissions display.
     let permsDisplayText, permsButtonText;
@@ -228,9 +219,6 @@ const UpdateTimeline = React.createClass({
       permsButtonText = <Fa type='spinner spin' />;
     }
 
-    // Disabled state for "Add" button.
-    let addDisabled = {disabled: !!this.state._requestId};
-
     // Source for the preview iframe
     let iframeSrc = `${this.state.previewUrlBase}&source=${this.state.timelineId}&height=${this.state.iframeHeight}#${this.state.focus ? this.state.focus : 0}`;
 
@@ -243,10 +231,16 @@ const UpdateTimeline = React.createClass({
           <Nav>
             <li>
               <span className='linkless-nav-item'>
-                <button className='btn btn-primary btn-block' onClick={this.handleAddRow} {...addDisabled}>
-                  { this.state._requestId ? <Fa type='spinner spin' /> : '' }
-                  Add My Story
-                </button>
+                <ModalRowEditor
+                  {...this.props}
+                  rowId={this.state.modalRowId}
+                  onOpen={this.handleAddRow}
+                  onClose={this.clearModal}
+                  disabled={!!this.state._requestId}
+                  >
+                    {this.state._requestId ? <Fa type='spinner spin' /> : ''}
+                    Add My Story
+                </ModalRowEditor>
               </span>
             </li>
             <li>
@@ -282,14 +276,17 @@ const UpdateTimeline = React.createClass({
         <div className='hidden-xs timeline-preview-holder'>
           <iframe id='timeline-preview' src={iframeSrc} height={this.state.iframeHeight + "px"} width='100%' frameBorder='0'></iframe>
         </div>
+
         <div className={'sidebar-overlay' + (this.state.showSidebar ? '' : ' stow')}>
           <div className='container'>
             <Row>
               <a className='close' onClick={this.toggleSidebar}>close <Fa type='times' /></a>
             </Row>
-            {rows}
           </div>
+          {rows}
         </div>
+
+
       </div>
     );
   }

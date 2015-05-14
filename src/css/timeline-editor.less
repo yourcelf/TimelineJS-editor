@@ -2,6 +2,16 @@
 @import "../../bower_components/font-awesome/css/font-awesome.css";
 @import "../../node_modules/pikaday/css/pikaday.css";
 
+// prevent sub-containers from creeping outside their parents.
+.mht-timeline-editor .container,
+.modal-dialog .container {
+  width: auto;
+}
+.tooltip {
+  // raleway's a bit thin for tooltips
+  font-weight: bold;
+}
+
 .mht-timeline-editor {
   /*
    * Page basics
@@ -10,8 +20,6 @@
   height: 100%;
   // Add height to react's default container.
   & > div { height: 100%; }
-  // prevent sub-containers from creeping outside their parents.
-  .container { width: auto; }
 
   // Links and navs
   a.delete-link { color: #333; text-decoration: none; }
@@ -40,10 +48,23 @@
     max-width: 80%;
     background-color: white;
     box-shadow: 2px 0px 2px #000;
-    padding: 1em;
     overflow: auto;
     &.stow {
       display: none;
     }
+
+    .edit-row-form {
+      background-color: #eee;
+      margin-bottom: 1em;
+      padding: 0.5em;
+    }
+  }
+
+  .row-number {
+    font-size: 2em;
+  }
+
+  .media-link-list i.fa {
+    padding: 0 0.2em;
   }
 }

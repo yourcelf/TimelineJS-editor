@@ -8553,6 +8553,13 @@ button.close {
     display: none !important;
   }
 }
+.mht-timeline-editor .container,
+.modal-dialog .container {
+  width: auto;
+}
+.tooltip {
+  font-weight: bold;
+}
 .mht-timeline-editor {
   /*
    * Page basics
@@ -8562,9 +8569,6 @@ button.close {
 }
 .mht-timeline-editor > div {
   height: 100%;
-}
-.mht-timeline-editor .container {
-  width: auto;
 }
 .mht-timeline-editor a.delete-link {
   color: #333;
@@ -8598,9 +8602,19 @@ button.close {
   max-width: 80%;
   background-color: white;
   box-shadow: 2px 0px 2px #000;
-  padding: 1em;
   overflow: auto;
 }
 .mht-timeline-editor .sidebar-overlay.stow {
   display: none;
+}
+.mht-timeline-editor .sidebar-overlay .edit-row-form {
+  background-color: #eee;
+  margin-bottom: 1em;
+  padding: 0.5em;
+}
+.mht-timeline-editor .row-number {
+  font-size: 2em;
+}
+.mht-timeline-editor .media-link-list i.fa {
+  padding: 0 0.2em;
 }
