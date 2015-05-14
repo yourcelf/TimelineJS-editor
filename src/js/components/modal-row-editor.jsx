@@ -57,7 +57,8 @@ const ModalRowEditor = React.createClass({
             <RowEditor
               context={this.props.context}
               rowId={this.props.rowId}
-              onSave={this.handleToggle} /> :
+              onSave={this.handleToggle}
+              onDelete={this.handleToggle} /> :
             <span>Loading ... <Fa type='spinner spin'/></span>
           }
         </div>

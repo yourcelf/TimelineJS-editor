@@ -113,6 +113,9 @@ const RowEditor = React.createClass({
     if (confirm("Are you sure you want to delete this entry?")) {
       let payload = {action: "DELETE_ROW", row: this.state.row};
       this.props.context.executeAction(actions.editSpreadsheet, payload);
+      if (this.props.onDelete) {
+        this.props.onDelete();
+      }
     }
     /* eslint-enable no-alert */
   },
