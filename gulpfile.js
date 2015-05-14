@@ -38,8 +38,10 @@ gulp.task('js', function() {
 
 gulp.task('css', function() {
   return gulp.src(['src/*/timeline-editor.less'])
+    .pipe(sourcemaps.init({loadMaps: true}))
     .pipe(less())
     .pipe(cssimport())
+    .pipe(sourcemaps.write())
     .pipe(gulp.dest(DEST))
     .pipe(browserSync.reload({stream: true}))
 });

@@ -8553,10 +8553,18 @@ button.close {
     display: none !important;
   }
 }
-.mht-timeline-editor a.nav-link {
-  color: #222;
-  font-weight: bold;
-  text-decoration: none;
+.mht-timeline-editor {
+  /*
+   * Page basics
+   */
+  position: relative;
+  height: 100%;
+}
+.mht-timeline-editor > div {
+  height: 100%;
+}
+.mht-timeline-editor .container {
+  width: auto;
 }
 .mht-timeline-editor a.delete-link {
   color: #333;
@@ -8566,49 +8574,33 @@ button.close {
   background-color: red;
   color: white;
 }
-.mht-timeline-editor .preview-iframe-container {
-  display: block;
+.mht-timeline-editor .linkless-nav-item {
   position: relative;
-  width: 100%;
-}
-.mht-timeline-editor .preview-iframe-container iframe {
-  position: fixed;
-  right: 2rem;
-  top: 6rem;
-  box-shadow: 0px 0px 2px #000;
-}
-.mht-timeline-editor .row-number {
+  padding: 10px 15px;
   display: block;
-  font-size: 4rem;
 }
-@media (min-width: 768px) {
-  .mht-timeline-editor .row-number {
-    display: inline-block;
-    font-size: 4rem;
-    position: absolute;
-    left: -4rem;
-  }
+.mht-timeline-editor .linkless-nav-item a,
+.mht-timeline-editor .linkless-nav-item a:visited {
+  color: #777777;
 }
-.mht-timeline-editor .edit-row-form {
-  background-color: #eee;
+.mht-timeline-editor .linkless-nav-item:hover {
+  background-color: transparent;
+}
+.mht-timeline-editor a.block {
+  display: block;
+}
+.mht-timeline-editor .sidebar-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 600px;
+  max-width: 80%;
+  background-color: white;
+  box-shadow: 2px 0px 2px #000;
   padding: 1em;
+  overflow: auto;
 }
-.mht-timeline-editor .edit-row-forms-enter {
-  opacity: 0.01;
-  transition: opacity 0.5s ease-in;
-}
-.mht-timeline-editor .edit-row-forms-enter.edit-row-forms-enter-active {
-  opacity: 1;
-}
-.mht-timeline-editor .edit-row-forms-leave {
-  opacity: 1;
-  transition: opacity 0.5s ease-in;
-}
-.mht-timeline-editor .edit-row-forms-leave.edit-row-forms-leave-active {
-  opacity: 0.01;
-}
-.mht-timeline-editor .perms-control {
-  text-align: right;
-  padding: 1rem;
-  width: 100%;
+.mht-timeline-editor .sidebar-overlay.stow {
+  display: none;
 }

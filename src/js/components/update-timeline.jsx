@@ -4,12 +4,14 @@ const moment = require("moment");
 const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
 const React = require("react");
 const ReactCSSTransitionGroup = require("react/addons").addons.CSSTransitionGroup;
-const {Button, Row, Col} = require("react-bootstrap");
+const {Button, Col, Row, CollapsibleNav, DropdownButton, Navbar, Nav, NavItem,
+  OverlayTrigger, MenuItem, Modal, ModalTrigger, Tooltip} = require("react-bootstrap");
 
 const SpreadsheetStore = require("../stores/spreadsheet");
 const PageStore = require("../stores/page");
 const UserStore = require("../stores/user");
 const actions = require("../actions");
+const logger = require("../logger");
 
 const SoftLink = require("./soft-link.jsx");
 const RowEditor = require("./row-editor.jsx");
@@ -38,17 +40,16 @@ const UpdateTimeline = React.createClass({
     return {
       timelineId: ps.getTimelineId(),
       // URL for preview iframe without ``source=`` param or hash.
-      previewUrlBase: 'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&height=650',
+      previewUrlBase: 'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en',
       data: data,
       anyoneCanEdit: ss.anyoneCanEdit()
     };
-
-
-
   },
   getInitialState: function() {
     // Just return the standard state-from-stores.
-    return this._getStateFromStores();
+    var state = this._getStateFromStores();
+    state.iframeHeight = 650;
+    return state;
   },
   onChange: function(payload) {
     // Detect whether we've changed, and should reload the iframe.
@@ -79,6 +80,7 @@ const UpdateTimeline = React.createClass({
 
     // Check if this update contains a row that we requested be created.  If
     // so, scroll that row into view and remove our state requesting that row.
+    // XXX open the modal instead
     if (this.state._requestId && payload.data && payload.data.rows) {
       for (let i = 0; i < payload.data.rows.length; i++) {
         if (payload.data.rows[i]._requestId === this.state._requestId) {
@@ -102,8 +104,19 @@ const UpdateTimeline = React.createClass({
   reloadIframe: function() {
     // Add an arbitrary query param to force reload.
     let newUrl = this.state.previewUrlBase + '&_v';
-    console.log("Reload iframe!", newUrl);
+    logger.debug("Reload iframe!", newUrl);
     this.setState({previewUrlBase: newUrl});
+  },
+  resizeIframe: _.debounce(function() {
+    let container = document.querySelector('.mht-timeline-editor');
+    let iframe = document.getElementById("timeline-preview");
+    let containerRect = container.getBoundingClientRect();
+    let iframeRect = iframe.getBoundingClientRect();
+    this.setState({iframeHeight: containerRect.bottom - iframeRect.top - 5});
+  }),
+  componentDidMount: function() {
+    this.resizeIframe();
+    window.addEventListener("resize", this.resizeIframe);
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
@@ -116,11 +129,12 @@ const UpdateTimeline = React.createClass({
   componentWillUnmount: function() {
     // Stop polling for remote spreadsheet updates.
     this.getStore("SpreadsheetStore").stopPolling();
+    window.removeEventListener("resize", this.resizeIframe);
   },
   handleFocusRow: function(rowId) {
     // Given a rowId, find the date-sorted index to pass as the url hash to
     // the iframe.
-    console.log("handleFocusRow", rowId);
+    logger.debug("handleFocusRow", rowId);
     let sortedRows = _.sortBy(this.state.data.rows, function(r) {
       return r._meta.startdateObj;
     });
@@ -170,6 +184,9 @@ const UpdateTimeline = React.createClass({
       _anyoneCanEditChange: true
     });
   },
+  toggleSidebar: function(event) {
+    this.setState({showSidebar: !this.state.showSidebar});
+  },
   render: function() {
     if (this.state.error) {
       return (
@@ -201,10 +218,10 @@ const UpdateTimeline = React.createClass({
       permsDisplayText = "";
       permsButtonText = <Fa type='spinner spin' />;
     } else if (this.state.anyoneCanEdit === true) {
-      permsDisplayText = <span><Fa type='unlock fw' />Anyone can edit this.</span>;
+      permsDisplayText = <span><Fa type='unlock fw' />Anyone can edit</span>;
       permsButtonText = "Lock it down";
     } else if (this.state.anyoneCanEdit === false) {
-      permsDisplayText = <span><Fa type='lock fw' />Only select users can edit this.</span>;
+      permsDisplayText = <span><Fa type='lock fw' />Only some users can edit</span>;
       permsButtonText = "Let anyone edit";
     }
     if (this.state._anyoneCanEditChange) {
@@ -215,58 +232,65 @@ const UpdateTimeline = React.createClass({
     let addDisabled = {disabled: !!this.state._requestId};
 
     // Source for the preview iframe
-    let iframeSrc = this.state.previewUrlBase + '&source=' + this.state.timelineId + '#' + (this.state.focus ? this.state.focus : 0);
+    let iframeSrc = `${this.state.previewUrlBase}&source=${this.state.timelineId}&height=${this.state.iframeHeight}#${this.state.focus ? this.state.focus : 0}`;
 
     // Page store for getting links.
     let ps = this.getStore("PageStore");
 
     return (
-      <Row>
-        <Col sm={6}>
-          <Row>
-            <h1>Edit Timeline</h1>
-            <p>
-              Spreadsheet:{' '}
-              <a href={'https://docs.google.com/spreadsheet/ccc?key=' + this.state.timelineId}
-                 className='nav-link'
-                 target='_blank'>
-                  {this.state.data.title} <Fa type='external-link' />
-              </a>
-            </p>
-          </Row>
-          <Row>
-            <Col xs={6} className='text-right'>
+      <div>
+        <Navbar brand='Edit Timeline'>
+          <Nav>
+            <li>
+              <span className='linkless-nav-item'>
+                <button className='btn btn-primary btn-block' onClick={this.handleAddRow} {...addDisabled}>
+                  { this.state._requestId ? <Fa type='spinner spin' /> : '' }
+                  Add My Story
+                </button>
+              </span>
+            </li>
+            <li>
+              <OverlayTrigger placement='bottom'
+                              overlay={<Tooltip><b>Invite others to edit</b></Tooltip>}>
+                <span className='linkless-nav-item'>
+                  { this.state.shortUrl ? <input value={this.state.shortUrl} type='text' className='form-control' readOnly onFocus={this.handleFocusShortUrl} /> : '' }
+                </span>
+              </OverlayTrigger>
+            </li>
+
+            <DropdownButton title={<span><Fa type='cog'/> More</span>} eventKey={3}>
+              <MenuItem eventKey='1' href={'https://docs.google.com/spreadsheet/ccc?key=' + this.state.timelineId} target='_blank'>
+                View spreadsheet: <b>{this.state.data.title}</b> <Fa type='external-link' />
+              </MenuItem>
+              <MenuItem eventKey='2' onSelect={this.toggleAnyoneCanEdit}>
+                { permsDisplayText }: { permsButtonText }
+              </MenuItem>
+              <MenuItem eventKey='3' onClick={this.toggleSidebar} href='#'>
+                Edit all rows
+              </MenuItem>
+            </DropdownButton>
+          </Nav>
+          <Nav right>
+            <li>
               <SoftLink {...this.props}
                 href={ps.getLink("READ", this.state.timelineId)}
-                className='btn btn-default'
-                html={<span><Fa type='link fw'/> Share Timeline</span>} />
-            </Col>
-            <Col xs={6} className='text-left'>
-              { this.state.shortUrl ? <input value={this.state.shortUrl} className='form-control' type='text' readOnly onFocus={this.handleFocusShortUrl} /> : '' }
-            </Col>
-          </Row>
-          <Row>
-            <button className='btn btn-primary btn-lg btn-block' onClick={this.handleAddRow} {...addDisabled}>
-              { this.state._requestId ? <Fa type='spinner spin' /> : '' }
-              Add My Story
-            </button>
-          </Row>
+                html={<span><Fa type='link fw'/> Share result</span>} />
+            </li>
+          </Nav>
+        </Navbar>
 
-          <ReactCSSTransitionGroup transitionName="edit-row-forms">
+        <div className='hidden-xs timeline-preview-holder'>
+          <iframe id='timeline-preview' src={iframeSrc} height={this.state.iframeHeight + "px"} width='100%' frameBorder='0'></iframe>
+        </div>
+        <div className={'sidebar-overlay' + (this.state.showSidebar ? '' : ' stow')}>
+          <div className='container'>
+            <Row>
+              <a className='close' onClick={this.toggleSidebar}>close <Fa type='times' /></a>
+            </Row>
             {rows}
-          </ReactCSSTransitionGroup>
-        </Col>
-
-        <Col sm={6} className='hidden-xs'>
-          <p className='perms-control'>
-            { permsDisplayText }{' '}
-            <button className='btn btn-default' onClick={this.toggleAnyoneCanEdit}>{ permsButtonText }</button>
-          </p>
-          <div className='preview-iframe-container'>
-            <iframe id='timeline-preview' src={iframeSrc} height='650' width='40%' frameBorder='0'></iframe>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
     );
   }
 });
