@@ -8618,3 +8618,11 @@ button.close {
 .mht-timeline-editor .media-link-list i.fa {
   padding: 0 0.2em;
 }
+.mht-timeline-editor .timeline-preview-holder {
+  position: relative;
+}
+.mht-timeline-editor .timeline-preview-holder .edit-this {
+  position: absolute;
+  top: 0;
+  right: 0;
+}

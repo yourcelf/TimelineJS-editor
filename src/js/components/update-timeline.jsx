@@ -41,7 +41,7 @@ const UpdateTimeline = React.createClass({
     return {
       timelineId: ps.getTimelineId(),
       // URL for preview iframe without ``source=`` param or hash.
-      previewUrlBase: 'https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en',
+      previewUrlBase: '../timelinejs/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&hash_bookmark=1',
       data: data,
       anyoneCanEdit: ss.anyoneCanEdit()
     };
@@ -80,8 +80,8 @@ const UpdateTimeline = React.createClass({
     }
 
     // Check if this update contains a row that we requested be created.  If
-    // so, scroll that row into view and remove our state requesting that row.
-    // XXX open the modal instead
+    // so, scroll that row into view and remove our state requesting that row,
+    // and set the modal's rowId.
     if (this.state._requestId && payload.data && payload.data.rows) {
       let rowIndex = _.findIndex(payload.data.rows, "_requestId", this.state._requestId);
       if (rowIndex !== -1) {
@@ -113,7 +113,7 @@ const UpdateTimeline = React.createClass({
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
-    //XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
+    // XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
     // Get the short URL.
     this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
       this.setState({shortUrl: shortUrl});
@@ -164,6 +164,18 @@ const UpdateTimeline = React.createClass({
   },
   clearModal: function(event) {
     this.setState({modalRowId: undefined});
+  },
+  editCurrentSlide: function(event) {
+    event.preventDefault();
+    let iframe = document.getElementById('timeline-preview');
+    let current = parseInt(iframe.contentWindow.document.location.hash.replace('#', ''));
+    if (!isNaN(current) && _.isNumber(current)) {
+      let sortedRows = _.sortBy(this.state.data.rows, function(r) {
+        return r._meta.startdateObj;
+      });
+      let rowId = sortedRows[current].id;
+      this.setState({modalRowId: rowId, focus: current});
+    }
   },
   toggleAnyoneCanEdit: function(event) {
     event.preventDefault();
@@ -234,7 +246,7 @@ const UpdateTimeline = React.createClass({
                 <ModalRowEditor
                   {...this.props}
                   rowId={this.state.modalRowId}
-                  onOpen={this.handleAddRow}
+                  onClick={this.handleAddRow}
                   onClose={this.clearModal}
                   disabled={!!this.state._requestId}
                   >
@@ -274,6 +286,9 @@ const UpdateTimeline = React.createClass({
         </Navbar>
 
         <div className='hidden-xs timeline-preview-holder'>
+          <Button className='edit-this' onClick={this.editCurrentSlide}>
+            <Fa type="pencil" /> Edit this
+          </Button>
           <iframe id='timeline-preview' src={iframeSrc} height={this.state.iframeHeight + "px"} width='100%' frameBorder='0'></iframe>
         </div>
 

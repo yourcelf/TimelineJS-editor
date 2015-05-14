@@ -36,6 +36,11 @@ gulp.task('js', function() {
     .pipe(gulp.dest(DEST + "js/"));
 });
 
+gulp.task('timelinejs', function() {
+  return gulp.src(['bower_components/TimelineJS/build/**/*'])
+    .pipe(gulp.dest(DEST + "timelinejs/"));
+});
+
 gulp.task('css', function() {
   return gulp.src(['src/*/timeline-editor.less'])
     .pipe(sourcemaps.init({loadMaps: true}))
@@ -81,6 +86,6 @@ gulp.task('watch', ['build'], function() {
   gulp.watch(['src/**/*.less'], ['css']);
 });
 
-gulp.task('build', ['css', 'html', 'js', 'fonts']);
+gulp.task('build', ['css', 'html', 'js', 'fonts', 'timelinejs']);
 gulp.task('default', ['build']);
 

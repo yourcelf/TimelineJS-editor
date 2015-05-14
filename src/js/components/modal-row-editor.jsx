@@ -9,17 +9,24 @@ const RowEditor = require("./row-editor.jsx");
 const ModalRowEditor = React.createClass({
   mixins: [OverlayMixin],
   getInitialState() {
-    console.log("not not ", !!this.props.rowId);
     return {
       isModalOpen: !!this.props.rowId
     };
   },
-  handleToggle(event) {
-    let open = this.state.isModalOpen;
-    this.setState({isModalOpen: !open});
+  componentWillReceiveProps(nextProps) {
+    if (!this.state.isModalOpen && !!nextProps.rowId) {
+      this.setState({isModalOpen: true});
+    }
+  },
+  onClick(event) {
     if (this.props.onClick) {
       this.props.onClick(event);
     }
+    this.handleToggle(event);
+  },
+  handleToggle(event) {
+    let open = this.state.isModalOpen;
+    this.setState({isModalOpen: !open});
     if (open) {
       if (this.props.onClose) {
         this.props.onClose(event);
@@ -32,7 +39,7 @@ const ModalRowEditor = React.createClass({
   },
   render() {
     return (
-      <Button onClick={this.handleToggle} bsStyle='primary' disabled={this.props.disabled}>
+      <Button onClick={this.onClick} bsStyle='primary' disabled={this.props.disabled}>
         {this.props.children}
       </Button>
     );
