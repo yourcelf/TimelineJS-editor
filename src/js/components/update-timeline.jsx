@@ -253,10 +253,10 @@ const UpdateTimeline = React.createClass({
       permsButtonText = <Fa type='spinner spin' />;
     } else if (this.state.anyoneCanEdit === true) {
       permsDisplayText = <span><Fa type='unlock fw' />Anyone can edit</span>;
-      permsButtonText = "Lock it down";
+      permsButtonText = "Click to lock it down";
     } else if (this.state.anyoneCanEdit === false) {
       permsDisplayText = <span><Fa type='lock fw' />Only some users can edit</span>;
-      permsButtonText = "Let anyone edit";
+      permsButtonText = "Click to let anyone edit";
     }
     if (this.state._anyoneCanEditChange) {
       permsButtonText = <Fa type='spinner spin' />;
@@ -299,7 +299,7 @@ const UpdateTimeline = React.createClass({
               <MenuItem eventKey='1' href={'https://docs.google.com/spreadsheet/ccc?key=' + this.state.timelineId} target='_blank'>
                 View spreadsheet: <b>{this.state.data.title}</b> <Fa type='external-link' />
               </MenuItem>
-              <MenuItem eventKey='2' onSelect={this.toggleAnyoneCanEdit}>
+              <MenuItem eventKey='2' onClick={this.toggleAnyoneCanEdit}>
                 { permsDisplayText }: { permsButtonText }
               </MenuItem>
               <MenuItem eventKey='3' onClick={this.toggleSidebar} href='#'>
