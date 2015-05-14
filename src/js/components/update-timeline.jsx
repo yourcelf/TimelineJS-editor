@@ -209,7 +209,7 @@ const UpdateTimeline = React.createClass({
     }
   },
   toggleAnyoneCanEdit: function(event) {
-    event.preventDefault();
+    if (event && event.preventDefault) { event.preventDefault() };
     let ss = this.getStore("SpreadsheetStore");
     let target = !ss.anyoneCanEdit();
     this.props.context.executeAction(actions.editSpreadsheet, {
