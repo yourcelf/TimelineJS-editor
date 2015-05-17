@@ -174,7 +174,14 @@ const RowEditor = React.createClass({
             </div>
           </div>
           <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
-          <Input type='url' label='Media Thumbnail URL' {...this.getInputProps("mediathumbnail")} {...inputCols} />
+          <div className='form-group'>
+            <label className={`control-label ${inputCols.labelClassName}`}>
+              Media Thumbnail URL
+            </label>
+            <div className={inputCols.wrapperClassName}>
+              <UrlOrImgurUpload {...this.getInputProps('mediathumbnail')} />
+            </div>
+          </div>
           <div className='form-group'>
             <div className={inputCols.labelClassName}/>
             <div className={inputCols.wrapperClassName}>

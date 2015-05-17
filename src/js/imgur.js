@@ -3,10 +3,9 @@ const superagent = require("superagent");
 const options = require("./options");
 
 const IMGUR_UPLOAD_URL = "https://api.imgur.com/3/image";
-const IMGUR_DOWNLOAD_URL = "https://i.imgur.com/{id}.gif";
 
 module.exports = {
-  uploadImage: function(imageBase64, progressListener) {
+  uploadImage: function(imageDataUrl, progressListener) {
     if (!options.imgurClientId) {
       throw new Error("Can't upload image without setting imgurClientId option");
     }
@@ -14,15 +13,15 @@ module.exports = {
       superagent.post(IMGUR_UPLOAD_URL)
         .set("Authorization", `Client-ID ${options.imgurClientId}`)
         .set("Accept", "application/json")
-        .send({image: imageBase64.split("base64,")[1], type: 'base64'})
+        .send({image: imageDataUrl.split("base64,")[1], type: 'base64'})
         .on("progress", progressListener)
         .end(function(err, res) {
           if (err) {
             console.log(err);
             return reject(err);
           }
-          var id = JSON.parse(res.text).data.id;
-          return resolve(IMGUR_DOWNLOAD_URL.replace("{id}", id));
+          var data = JSON.parse(res.text).data;
+          return resolve(data.link);
         });
     });
   }
