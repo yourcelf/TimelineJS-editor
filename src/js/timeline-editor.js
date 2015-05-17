@@ -12,16 +12,19 @@ var _ = require("lodash");
  * @param {object} opts - Options for the editor. Available options are:
  *  - ``div``: {string|DOM element} (required). The DOM element or ID of a DOM
  *    element to which to attach the editor.
- *  - ``clientId``: {string} (required). The Google Developer Account client ID
+ *  - ``googleClientId``: {string} (required). The Google Developer Account client ID
  *    which authorizes this application to interact with Google APIs. Must be
  *    authorized to use all scopes listed in ``goog.SCOPES``.
+ *  - ``imgurClientId``: {string} (optional). The Imgur application client ID
+ *    which authorizes this application to access the Imgur API. If not
+ *    present, uploading images from within the timeline will not be possible.
  *  - ``templateId``: {string} (optional). The ID of the Google Spreadsheet to use as a
  *    template for new timelines. Default:
  *    "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE"
- *  - ``redirectParam``: {string} The URL parameter to use for OAUTH redirects
- *    from Google. Should be chosen to avoid conflict with the URL scheme of
- *    the page in which the editor is embedded. Must match the URLs configured
- *    for the ``clientId``.  Default: "oauth2callback"
+ *  - ``redirectParam``: {string} (optional) The URL parameter to use for OAUTH
+ *    redirects from Google. Should be chosen to avoid conflict with the URL
+ *    scheme of the page in which the editor is embedded. Must match the URLs
+ *    configured for the ``googleClientId``.  Default: "oauth2callback"
  *  - ``timelineParam``: {string} (optional). The URL parameter to use for
  *    timeline IDs. Should be chosen to avoid conflict with the URL scheme of
  *    the page in which the editor is embedded. Default: "timeline"

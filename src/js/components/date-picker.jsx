@@ -1,5 +1,4 @@
 "use strict";
-const _ = require("lodash");
 const React = require("react");
 const PureRenderMixin = require("react/addons").PureRenderMixin;
 const Pikaday = require("pikaday");

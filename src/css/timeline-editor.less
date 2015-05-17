@@ -11,6 +11,12 @@
   .pick-a-date {
     max-width: 8em;
   }
+  .drop-target.dragging {
+    &, & input {
+      background-color: #eee;
+    }
+    outline: 4px dashed #aaa;
+  }
 }
 .tooltip {
   // raleway's a bit thin for tooltips
@@ -81,4 +87,5 @@
       right: 0;
     }
   }
+
 }

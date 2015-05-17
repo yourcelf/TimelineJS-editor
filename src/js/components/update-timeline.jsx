@@ -148,7 +148,7 @@ const UpdateTimeline = React.createClass({
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
-    this.getStore("SpreadsheetStore").beginPolling();
+    //XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
     // Get the short URL.
     this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
       this.setState({shortUrl: shortUrl});
@@ -209,7 +209,7 @@ const UpdateTimeline = React.createClass({
     }
   },
   toggleAnyoneCanEdit: function(event) {
-    if (event && event.preventDefault) { event.preventDefault() };
+    if (event && event.preventDefault) { event.preventDefault(); }
     let ss = this.getStore("SpreadsheetStore");
     let target = !ss.anyoneCanEdit();
     this.props.context.executeAction(actions.editSpreadsheet, {

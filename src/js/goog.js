@@ -74,7 +74,7 @@ module.exports.bootstrap = function() {
 module.exports.authorize = function() {
   return new Promise(function(resolve, reject) {
     gapi.auth.authorize({
-      "client_id": options.clientId,
+      "client_id": options.googleClientId,
       "scope": SCOPES.join(" "),
       "immediate": true
     }, function(authResult) {
@@ -167,7 +167,7 @@ module.exports.popupLogin = function(redirectUriBase) {
     let oauthUrl = URLS.oauth +
         "?scope=" + e(SCOPES.join(" ")) +
         "&redirect_uri=" + e(redirectUri) +
-        "&client_id=" + e(options.clientId) +
+        "&client_id=" + e(options.googleClientId) +
         "&response_type=token";
     let win = window.open(oauthUrl);
     let pollTimer = setInterval(function() {

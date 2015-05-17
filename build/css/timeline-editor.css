@@ -8561,6 +8561,16 @@ button.close {
 .modal-dialog .pick-a-date {
   max-width: 8em;
 }
+.mht-timeline-editor .drop-target.dragging,
+.modal-dialog .drop-target.dragging {
+  outline: 4px dashed #aaa;
+}
+.mht-timeline-editor .drop-target.dragging,
+.modal-dialog .drop-target.dragging,
+.mht-timeline-editor .drop-target.dragging input,
+.modal-dialog .drop-target.dragging input {
+  background-color: #eee;
+}
 .tooltip {
   font-weight: bold;
 }

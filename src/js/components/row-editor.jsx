@@ -9,6 +9,7 @@ const actions = require("../actions");
 const {Input} = require("react-bootstrap");
 const Fa = require("./fa.jsx");
 const TooltipFa = require("./tooltip-fa.jsx");
+const UrlOrImgurUpload = require("./url-or-imgur-upload.jsx");
 
 /**
  * React component for a single row's editing form.
@@ -67,6 +68,7 @@ const RowEditor = React.createClass({
       value: this.state.row[attr],
       name: attr,
       onChange: function(event) {
+        console.log("onChange", attr, event);
         // Handle change of an input: set the state, and check dirty.
         if (event.target.value !== this.state.row[attr]) {
           let newRow = _.extend({}, this.state.row);
@@ -168,10 +170,9 @@ const RowEditor = React.createClass({
                 <TooltipFa type="fw soundcloud" title="Soundcloud" />
                 <TooltipFa type="fw globe" title="The Internets" />
               </div>
-              <input className='form-control' type='url' {...this.getInputProps("media")} />
+              <UrlOrImgurUpload {...this.getInputProps('media')} />
             </div>
           </div>
-          <Input type='url' label='Media' {...this.getInputProps("media")} {...inputCols} />
           <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
           <Input type='url' label='Media Thumbnail URL' {...this.getInputProps("mediathumbnail")} {...inputCols} />
           <div className='form-group'>

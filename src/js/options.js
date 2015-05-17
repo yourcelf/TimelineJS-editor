@@ -5,9 +5,10 @@
  *
  *     mhtEditor({
  *       div: 'myDivId',
- *       clientId: '<google-client-id>',
+ *       googleClientId: '<google-client-id>',
  *       templateId: "0AppSVxABhnltdEhzQjQ4MlpOaldjTmZLclQxQWFTOUE",
- *       spreadsheetsCorsProxy: "https://localhost:5000"
+ *       spreadsheetsCorsProxy: "https://localhost:5000",
+ *       imgurClientId: '<imgur-client-id>'
  *     })
  */
 module.exports = {
