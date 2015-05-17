@@ -7,7 +7,10 @@ var browserSync = require("browser-sync");
 var buffer = require('vinyl-buffer');
 var cssimport = require('gulp-cssimport');
 var del = require('del');
-var eslint = require("gulp-eslint")
+var eslint = require("gulp-eslint");
+var fs = require("fs");
+var insert = require("gulp-insert");
+var gulpFilter = require("gulp-filter");
 var gutil = require('gulp-util');
 var less = require('gulp-less');
 var source = require('vinyl-source-stream');
@@ -37,7 +40,14 @@ gulp.task('js', function() {
 });
 
 gulp.task('timelinejs', function() {
+  // filter to append some css to timeline.css
+  var filter = gulpFilter(['css/timeline.css']);
+  var extraCss = fs.readFileSync(__dirname + '/src/css/category-colors.css');
+
   return gulp.src(['bower_components/TimelineJS/build/**/*'])
+    .pipe(filter) // filters for only css/timeline.css
+    .pipe(insert.append(extraCss)) //appends our css to it
+    .pipe(filter.restore()) // restores everything else to the stream
     .pipe(gulp.dest(DEST + "timelinejs/"));
 });
 

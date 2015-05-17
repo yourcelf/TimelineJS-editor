@@ -37,6 +37,10 @@ var _ = require("lodash");
  *    Google Spreadsheets. Source for an appropriate proxy is available at
  *    https://github.com/yourcelf/gspreadsheets-cors-proxy.
  *    Default: "https://gspreadsheetscorsproxy.herokuapp.com"
+ *  - ``tags``: {object} (optional) A mapping of tags and their colors. If
+ *    provided, the "tag" field will be changed to a drop-down select rather than
+ *    free-input, and specified colors will be injected into the timeline
+ *    rows.  Example: ``tags: {"People's Movements": "#ffffee", "Media": "#ffeeee"}``
  */
 window.mhtEditor = function(opts) {
   _.extend(options, opts);

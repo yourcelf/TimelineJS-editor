@@ -21,7 +21,7 @@ module.exports = {
             return reject(err);
           }
           var data = JSON.parse(res.text).data;
-          return resolve(data.link);
+          return resolve(data.link.replace("http:", "https:"));
         });
     });
   }

@@ -7,6 +7,16 @@ const PageStore = require('../stores/page');
 const actions = require('../actions');
 const Fa = require("./fa.jsx");
 
+const urlLib = require("url");
+const resolveScriptRelativePath = require("../resolve-script-relative-path.js");
+const getEmbedBaseUrl = function() {
+  let relative = resolveScriptRelativePath('timelinejs/embed/index.html');
+  if (relative.indexOf("http") === 0) {
+    return relative;
+  }
+  return urlLib.resolve(document.URL, relative);
+};
+
 /**
  * React component for a read-only view of timelines.
  */
@@ -15,7 +25,10 @@ const ReadTimeline = React.createClass({
   statics: {storeListeners: [PageStore]},
   _getStateFromStores: function() {
     let ps = this.getStore('PageStore');
-    return {timelineId: ps.getTimelineId()};
+    return {
+      timelineId: ps.getTimelineId(),
+      embedBaseUrl: getEmbedBaseUrl()
+    };
   },
   getInitialState: function() {
     return this._getStateFromStores();
@@ -49,7 +62,7 @@ const ReadTimeline = React.createClass({
     // We're dangerously-set-inner-html-ifying this so that we can use it both
     // as a TextArea value and as the embed.  So be careful to escape any user
     // input in it (e.g. the timeline ID).
-    let embedCode = "<iframe src='https://s3.amazonaws.com/cdn.knightlab.com/libs/timeline/latest/embed/index.html?source=" + _.escape(this.state.timelineId) + "&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>";
+    let embedCode = `<iframe src='${this.state.embedBaseUrl}?source=${_.escape(this.state.timelineId)}&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>`;
 
     return <div>
       <div dangerouslySetInnerHTML={{__html: embedCode}} />

@@ -18,15 +18,7 @@ const RowEditor = require("./row-editor.jsx");
 const ModalRowEditor = require("./modal-row-editor.jsx");
 const Fa = require("./fa.jsx");
 
-const resolveScriptRelativePath = function(sourceName, path) {
-  let scripts = document.getElementsByTagName("script");
-  for (let i = 0; i < scripts.length; i++) {
-    if (scripts[i].src.indexOf(sourceName) !== -1) {
-      return scripts[i].src.replace(sourceName, "") + path;
-    }
-  }
-};
-
+const resolveScriptRelativePath = require("../resolve-script-relative-path.js");
 const sortTimelineRows = function(rows) {
   let clone = _.clone(rows);
   clone.sort((a, b) => {
@@ -74,7 +66,6 @@ const UpdateTimeline = React.createClass({
       timelineId: ps.getTimelineId(),
       // URL for preview iframe without ``source=`` param or hash.
       previewUrlBase: resolveScriptRelativePath(
-        'js/timeline-editor.min.js',
         'timelinejs/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&hash_bookmark=1'
       ),
       data: data,
@@ -148,7 +139,7 @@ const UpdateTimeline = React.createClass({
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
-    this.getStore("SpreadsheetStore").beginPolling();
+    // XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
     // Get the short URL.
     this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
       this.setState({shortUrl: shortUrl});

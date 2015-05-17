@@ -7,9 +7,11 @@ const DatePicker = require("./date-picker.jsx");
 const SpreadsheetStore = require("../stores/spreadsheet");
 const actions = require("../actions");
 const {Input} = require("react-bootstrap");
+
 const Fa = require("./fa.jsx");
 const TooltipFa = require("./tooltip-fa.jsx");
 const UrlOrImgurUpload = require("./url-or-imgur-upload.jsx");
+const CategoryInput = require("./category-input.jsx");
 
 /**
  * React component for a single row's editing form.
@@ -194,7 +196,7 @@ const RowEditor = React.createClass({
                 {' '}
                 <div className='pull-right'>
                   <label>Tag</label>{' '}
-                  <input className='form-control' {...this.getInputProps("tag")} />
+                  <CategoryInput {...this.getInputProps("tag")} />
                 </div>
               </div>
             </div>
