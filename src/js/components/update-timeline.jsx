@@ -39,6 +39,7 @@ const sortTimelineRows = function(rows) {
     }
     return 0;
   });
+  clone = _.reject(clone, (r) => !r.startdate);
   return clone;
 };
 
@@ -139,7 +140,7 @@ const UpdateTimeline = React.createClass({
   },
   componentWillMount: function() {
     // Start polling for remote spreadsheet updates.
-    // XXX XXX XXX this.getStore("SpreadsheetStore").beginPolling();
+    this.getStore("SpreadsheetStore").beginPolling();
     // Get the short URL.
     this.getStore("PageStore").getShortUrl().then(function(shortUrl) {
       this.setState({shortUrl: shortUrl});
