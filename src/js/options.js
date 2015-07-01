@@ -21,5 +21,5 @@ module.exports = {
   /** URL parameter for edit mode */
   editParam: "edit",
   /** Proxy to use for adding CORS headers to Google Spreadsheets API responses. */
-  spreadsheetsCorsProxy: "https://gspreadsheetscorsproxy.herokuapp.com"
+  spreadsheetsCorsProxy: "https://gspreadsheetscorsproxy2.herokuapp.com"
 };

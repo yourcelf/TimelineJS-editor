@@ -1,4 +1,5 @@
 "use strict";
+const _ = require("lodash");
 const React = require("react");
 const PureRenderMixin = require("react/addons").PureRenderMixin;
 const goog = require("../goog");
@@ -31,6 +32,9 @@ const CreateTimeline = React.createClass({
         that.props.context.executeAction(actions.setSpreadsheetId, res.id);
         that.props.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: res.id});
         that.setState({disableForm: false});
+      }).catch(function(err) {
+        console.log("duplicateTemplate error", err);
+        that.setState({duplicateError: err, disableForm: false});
       });
     }
   },
@@ -40,6 +44,7 @@ const CreateTimeline = React.createClass({
       templateUrl: "",
       templateId: null,
       templateUrlError: false,
+      duplicateError: false,
       disableForm: false
     };
   },
@@ -77,14 +82,22 @@ const CreateTimeline = React.createClass({
       return <div>Creating timeline... <Fa type='spinner spin' /></div>;
     } else {
       let templateUrlHelp = "";
-      if (this.state.templateUrl === "") {
+      let hasError = false;
+      if (this.state.duplicateError) {
+        templateUrlHelp = "Error copying the template timeline.";
+        if (this.state.duplicateError.message) {
+          templateUrlHelp += ` Google says: ${_.escape(this.state.duplicateError.message)}`;
+        }
+        hasError = true;
+      } else if (this.state.templateUrlError) {
+        templateUrlHelp = "Please paste the URL to a google spreadsheet or a timeline hosted on this site.";
+        hasError = true;
+      } else if (this.state.templateUrl === "") {
         templateUrlHelp = <span>
           If blank, the {' '}
           <a href={'https://docs.google.com/spreadsheet/ccc?key=' + options.templateId + '&mode=public'} target='_blank'>default template</a>
           {' '} will be used.
         </span>;
-      } else if (this.state.templateUrlError) {
-        templateUrlHelp = "Please paste the URL to a google spreadsheet or a timeline hosted on this site.";
       }
 
       return (
@@ -99,7 +112,7 @@ const CreateTimeline = React.createClass({
                      onChange={this.handleTitleChange}
                      required />
             </div>
-            <div className={this.state.templateUrlError ? "has-error" : ""}>
+            <div className={hasError ? "has-error" : ""}>
               <Input type='url'
                      name='templateUrl'
                      placeholder='Template to copy'

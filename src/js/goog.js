@@ -228,8 +228,12 @@ module.exports.duplicateTemplate = function(title, templateId) {
         }
       });
       req.execute(function(res) {
-        spreadsheetRes = res;
-        resolve(res);
+        if (res.code = 500) {
+          reject(res);
+        } else {
+          spreadsheetRes = res;
+          resolve(res);
+        }
       });
     });
   }).then(function(res) {
@@ -329,6 +333,8 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
  * ``{rows: {Array}, worksheetId: {string}, title: {string}, permissions: {object}``
  */
 module.exports.fetchSpreadsheet = function(spreadsheetId) {
+  console.log("fetchSpreadsheet", spreadsheetId);
+  return;
   var data = {};
   return module.exports.getFilePermissions(spreadsheetId).then(function(perms) {
     _.extend(data, perms);
