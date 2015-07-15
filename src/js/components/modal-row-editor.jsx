@@ -50,7 +50,7 @@ const ModalRowEditor = React.createClass({
       return <span/>;
     }
     return (
-      <Modal title='Edit Row' onRequestHide={this.handleToggle} animation>
+      <Modal title='Edit Story' onRequestHide={this.handleToggle} animation>
         <div className='modal-body'>
           {
             this.props.rowId ?

@@ -295,7 +295,7 @@ const UpdateTimeline = React.createClass({
                 { permsDisplayText }: { permsButtonText }
               </MenuItem>
               <MenuItem eventKey='3' onClick={this.toggleSidebar} href='#'>
-                Edit all rows
+                Edit all stories
               </MenuItem>
             </DropdownButton>
           </Nav>
@@ -303,14 +303,14 @@ const UpdateTimeline = React.createClass({
             <li>
               <SoftLink {...this.props}
                 href={ps.getLink("READ", this.state.timelineId)}
-                html={<span><Fa type='link fw'/> Share result</span>} />
+                html={<span><Fa type='link fw'/> Publish and Share</span>} />
             </li>
           </Nav>
         </Navbar>
 
         <div className='hidden-xs timeline-preview-holder'>
           <Button className='edit-this' onClick={this.editCurrentSlide}>
-            <Fa type="pencil" /> Edit this
+            <Fa type="pencil" /> Edit this story
           </Button>
           <iframe id='timeline-preview' src={iframeSrc} height={this.state.iframeHeight + "px"} width='100%' frameBorder='0'></iframe>
         </div>

@@ -155,7 +155,7 @@ const RowEditor = React.createClass({
           <Input type='text' label='Headline' {...this.getInputProps("headline")} {...inputCols} />
           <Input type='textarea' label='Text' {...this.getInputProps("text")} {...inputCols} />
           <div className='form-group'>
-            <label className={`control-label ${inputCols.labelClassName}`}>Media</label>
+            <label className={`control-label ${inputCols.labelClassName}`}>Media URL</label>
             <div className={inputCols.wrapperClassName}>
               <div className='media-link-list'>
                 Any link to:
@@ -175,10 +175,10 @@ const RowEditor = React.createClass({
               <UrlOrImgurUpload {...this.getInputProps('media')} />
             </div>
           </div>
-          <Input type='text' label='Media Credit' {...this.getInputProps("mediacredit")} {...inputCols} />
+          <Input type='text' label='Media Caption' {...this.getInputProps("mediacredit")} {...inputCols} />
           <div className='form-group'>
             <label className={`control-label ${inputCols.labelClassName}`}>
-              Media Thumbnail URL
+              Thumbnail link
             </label>
             <div className={inputCols.wrapperClassName}>
               <UrlOrImgurUpload {...this.getInputProps('mediathumbnail')} />
@@ -195,7 +195,7 @@ const RowEditor = React.createClass({
                 </label>
                 {' '}
                 <div className='pull-right'>
-                  <label>Tag</label>{' '}
+                  <label>Category</label>{' '}
                   <CategoryInput {...this.getInputProps("tag")} />
                 </div>
               </div>
