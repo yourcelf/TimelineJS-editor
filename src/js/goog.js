@@ -13,6 +13,7 @@ const spreadsheetsProxyBase = options.spreadsheetsCorsProxy || spreadsheetsBase;
 const URLS = {
   'oauth': "https://accounts.google.com/o/oauth2/auth",
   'worksheetFeed': spreadsheetsProxyBase + '/feeds/worksheets/SPREADSHEET_ID/private/full',
+  'cellsFeed': spreadsheetsProxyBase + '/feeds/cells/SPREADSHEET_ID/WORKSHEET_ID/private/full',
   'rowsFeed': spreadsheetsProxyBase + '/feeds/list/SPREADSHEET_ID/WORKSHEET_ID/private/full',
   'profile': 'https://www.googleapis.com/plus/v1/people/me',
   'shortener': 'https://www.googleapis.com/urlshortener/v1/url'
@@ -207,42 +208,109 @@ module.exports.popupLogin = function(redirectUriBase) {
 };
 
 /**
- * Create a copy of the given spreadsheet, publish it, and set its permissions
- * to allow anyone to edit it.
- *
- * @param {string} title - The titel to give to the copied spreadsheet.
- * @param {string} templateId - The ID for the google spreadsheet to copy.  If
- * ommitted, the default templateId defined in options will be used.
+ * Write the header row to a spreadsheet with TimelineJS column values.
+ * @param {String} spreadsheetId - The ID of the spreadshet to write to 
+ * @param {String} worksheetId - The ID of the worksheet in the spreadsheet to
+ * write to
+ * @return {Promise} A promise resolving to the HTTP response for the header
+ * write operation.
  */
-module.exports.duplicateTemplate = function(title, templateId) {
-  let spreadsheetRes;
+module.exports.writeWorksheetHeader = function(spreadsheetId, worksheetId) {
+  let url = URLS.cellsFeed.replace("SPREADSHEET_ID", spreadsheetId)
+                          .replace("WORKSHEET_ID", worksheetId);
+  let cellIdMap = {};
+  let token = gapi.auth.getToken();
   return new Promise(function(resolve, reject) {
-    gapi.client.load('drive', 'v2', function() {
-      let req = gapi.client.drive.files.copy({
-        fileId: templateId || options.templateId,
-        resource: {
-          "description": "Timeline JS template copy",
-          "labels.restricted": false,
-          "title": title,
-          "writersCanShare": true
+    let xml = _headerRowBatchXML(url);
+    // Must add the "If-Match: *" header to avoid version complaints from the
+    // API.  We can't get versions for not-yet-existent cells; this seems to be
+    // the easiest way to relax that constraint.
+    // Ref: http://stackoverflow.com/q/22719170/85461
+    superagent.post(`${url}/batch`)
+      .set("content-type", "application/atom+xml")
+      .set("Authorization", "Bearer " + token.access_token)
+      .set("If-Match", "*")
+      .send(xml)
+      .end(function(err, res) {
+        if (err) {
+          return reject(err);
+        } else if (res.text.indexOf("Error") !== -1) {
+          console.log(res);
+          return reject(res);
         }
+        return resolve(res);
+      });
+  });
+};
+
+/**
+ * Create a new spreadsheet for timelines.
+ * @param {String} title - The title to give to the new spreadsheet.
+ * @param {String} templateId - (optional) If given, will copy the contents of
+ * templateId into the new spreadsheet.
+ */
+module.exports.createSpreadsheet = function(title, templateId) {
+  let newFileId;
+  let worksheetId;
+  return new Promise(function(resolve, reject) {
+    // Create a new empty file.
+    console.log("Creating new empty file");
+    gapi.client.load('drive', 'v2', function() {
+      let req = gapi.client.drive.files.insert({
+        'mimeType': 'application/vnd.google-apps.spreadsheet',
+        'title': title
       });
       req.execute(function(res) {
-        if (res.code = 500) {
+        newFileId = res.id;
+        console.log("New file ID", newFileId);
+        if (res.code === 500) {
           reject(res);
         } else {
-          spreadsheetRes = res;
           resolve(res);
         }
       });
     });
   }).then(function(res) {
-    return module.exports.publishSpreadsheet(spreadsheetRes.id);
+    console.log("Created:", res);
+    // Fetch the worksheet info.
+    return module.exports.getWorksheetInfo(newFileId);
   }).then(function(res) {
-    return module.exports.addAnyoneCanEdit(spreadsheetRes.id);
-  }).then(function() {
-    return spreadsheetRes;
+    console.log("Worksheet info:", res);
+    worksheetId = res.worksheetId;
+    // Write the header to that file.
+    return module.exports.writeWorksheetHeader(newFileId, worksheetId);
+  }).then(function(res) {
+    console.log("Header written:", res);
+    if (templateId) {
+      // Copy in the rows.
+      return module.exports.fetchSpreadsheet(templateId).then(function(data) {
+        let promises = data.rows.map(function(row) {
+          return module.exports.addSpreadsheetRow(newFileId, worksheetId, row);
+        });
+        return Promise.all(promises);
+      });
+    } else {
+      // Write an example row.
+      return module.exports.addSpreadsheetRow(newFileId, worksheetId, {
+        startdate: moment().format('YYYY-MM-DD'),
+        headline: "Example entry",
+        text: "Delete this entry when you've added more.",
+        media: "https://i.imgur.com/PEH4mJW.jpg"
+      });
+    }
+  }).then(function(res) {
+    console.log("Rows added:", res);
+    // Publish it.
+    return module.exports.publishSpreadsheet(newFileId);
+  }).then(function(res) {
+    console.log("Published:", res);
+    // Liberalize perms.
+    return module.exports.addAnyoneCanEdit(newFileId);
+  }).then(function(res) {
+    console.log("Permissioned:", res);
+    return newFileId;
   });
+
 };
 
 /**
@@ -333,8 +401,6 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
  * ``{rows: {Array}, worksheetId: {string}, title: {string}, permissions: {object}``
  */
 module.exports.fetchSpreadsheet = function(spreadsheetId) {
-  console.log("fetchSpreadsheet", spreadsheetId);
-  return;
   var data = {};
   return module.exports.getFilePermissions(spreadsheetId).then(function(perms) {
     _.extend(data, perms);
@@ -440,7 +506,8 @@ function _spreadsheetRowToObj(row) {
     rowObj[col] = row["gsx$" + col].$t;
   });
   rowObj.id = row.id.$t;
-  rowObj._version = _.find(row.link, function(l) { return l.rel === "edit"; }).href;
+  let editLink = _.find(row.link, function(l) { return l.rel === "edit"; });
+  rowObj._version = editLink ? editLink.href : undefined;
   return rowObj;
 }
 
@@ -454,6 +521,27 @@ function _columnXml(rowObj) {
 // Wrap the given contents in the namespaced <entry> tags used by the spreadsheet API.
 function _entryXml(contents) {
   return "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended'>" + contents + "</entry>";
+}
+
+// Return the batch XML for setting a spreadsheet's header. Reference: https://developers.google.com/google-apps/spreadsheets/data#update_multiple_cells_with_a_batch_request
+function _headerRowBatchXML(url, cellIdMap) {
+  url = url.replace(spreadsheetsProxyBase, spreadsheetsBase);
+  let entries = _.map(COLUMNS, function(column, i) {
+    return `<entry>
+      <batch:id>A${i + 1}</batch:id>
+      <batch:operation type="update" />
+      <id>${url}/R1C${i + 1}</id>
+      <link rel="edit" type="application/atom+xml" href="${url}/R1C${i + 1}" />
+      <gs:cell row="1" col="${i + 1}" inputValue="${column}" />
+    </entry>`;
+  });
+  
+  return `<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:batch="http://schemas.google.com/gdata/batch"
+        xmlns:gs="http://schemas.google.com/spreadsheets/2006">
+    <id>${url}</id>
+    ${entries.join("\n")}
+  </feed>`;
 }
 
 /**
