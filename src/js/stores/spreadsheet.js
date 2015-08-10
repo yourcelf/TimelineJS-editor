@@ -8,6 +8,7 @@ const SpreadsheetStore = createStore({
   storeName: "SpreadsheetStore",
   initialize: function() {
     this.data = {};
+    this._fetchErrors = [];
     this.setMaxListeners(15); // Suppress warnings about emitter leak
   },
   // State info
@@ -49,8 +50,19 @@ const SpreadsheetStore = createStore({
     "SET_SPREADSHEET_ID": "handleSetSpreadsheetId"
   },
 
-  handleApiError: function(err) {
-    console.log("ERROR", err);
+  handleApiError: function(err, action) {
+    console.log("ERROR", action, err);
+    if (action === "fetch rows") {
+      this._fetchErrors.push({error: err, date: new Date()});
+      if (this._fetchErrors.length > 2) {
+        this.error = {
+          errors: this._fetchErrors,
+          message: _.pluck(this._fetchErrors, "message").join("; ")
+        };
+      } else {
+        console.log(`Fetch error ${this._fetchErrors.length}/2`);
+      }
+    }
     this.error = err;
     this.emitChange();
   },
@@ -76,7 +88,7 @@ const SpreadsheetStore = createStore({
           // Reparse date objects and indices.
           this._setData(this.data);
           this.emitChange();
-        }.bind(this)).catch(this.handleApiError.bind(this));
+        }.bind(this)).catch((err) => this.handleApiError(err, payload.action));
         break;
       case "DELETE_ROW":
         goog.deleteSpreadsheetRow(payload.row).then(function(res) {
@@ -86,10 +98,11 @@ const SpreadsheetStore = createStore({
           // Reparse date objects and indices.
           this._setData(this.data);
           this.emitChange();
-        }.bind(this)).catch(this.handleApiError.bind(this));
+        }.bind(this)).catch((err) => this.handleApiError(err, payload.action));
         break;
       case "CHANGE_ROW":
         goog.editSpreadsheetRow(payload.row).then(function(row) {
+          row._requestId = payload._requestId;
           for (let i = 0; i < this.data.rows.length; i++) {
             if (this.data.rows[i].id === row.id) {
               this.data.rows[i] = row;
@@ -99,7 +112,7 @@ const SpreadsheetStore = createStore({
           // Reparse date objects and indices.
           this._setData(this.data);
           this.emitChange();
-        }.bind(this)).catch(this.handleApiError.bind(this));
+        }.bind(this)).catch((err) => this.handleApiError(err, payload.action));
         break;
       case "SET_ANYONE_CAN_EDIT":
         if (payload.anyoneCanEdit) {
@@ -108,14 +121,14 @@ const SpreadsheetStore = createStore({
             // will be clobbered by the next polling update.
             this.data.permissions.push({role: "writer", id: "anyone"});
             this.emitChange();
-          }.bind(this)).catch(this.handleApiError.bind(this));
+          }.bind(this)).catch((err) => this.handleApiError(err, payload.action));
         } else {
           goog.removeAnyoneCanEdit(this.data.id).then(function(res) {
             this.data.permissions = _.reject(this.data.permissions, function(perm) {
               return perm.id === "anyone" && perm.role === "writer";
             });
             this.emitChange();
-          }.bind(this)).catch(this.handleApiError.bind(this));
+          }.bind(this)).catch((err) => this.handleApiError(err, payload.action));
         }
         break;
       default:
@@ -192,17 +205,16 @@ const SpreadsheetStore = createStore({
     return new Date(str);
   },
   _fetchRows: function() {
-    console.log("fetch rows");
-    this.error = null;
+    //console.log("fetch rows");
+    this._fetchErrors.length = 0;
     if (this.data.id) {
       goog.fetchSpreadsheet(this.data.id)
         .then((data) => {
-          console.log("rows fetched", data);
+          //console.log("rows fetched", data);
           _.extend(this.data, data);
           this._setData(this.data);
           this.emitChange();
-        })
-        .catch(this.handleApiError.bind(this));
+        }).catch((err) => this.handleApiError(err, "fetch rows"));
     } else {
       this.data = {};
     }

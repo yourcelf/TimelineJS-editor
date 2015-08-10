@@ -19,7 +19,7 @@ const CategoryInput = React.createClass({
                 onChange={this.onSelect}
                 defaultValue={this.props.value} >
           <option value=''>----</option>
-          {_.map(options.tags, (tag) => (<option value={tag}>{tag}</option>))}
+          {_.map(options.tags, (tag) => (<option value={tag} key={tag}>{tag}</option>))}
         </select>
       );
     } else {

@@ -85,14 +85,11 @@ const UpdateTimeline = React.createClass({
     if (ss.error) {
       this.setState({error: ss.error});
     }
-    let dirty = false;
+    let iframeDirty = false;
     if (this.state.data && payload.data && this.state.data.rows && payload.data.rows) {
-      dirty = ss.spreadsheetsDiffer(this.state.data, payload.data);
+      iframeDirty = ss.spreadsheetsDiffer(this.state.data, payload.data);
     }
     this.setState(this._getStateFromStores());
-    if (dirty) {
-      this.reloadIframe();
-    }
 
     // Check if we've updated the ``anyoneCanEdit`` status in response to a
     // request to do so.
@@ -120,14 +117,26 @@ const UpdateTimeline = React.createClass({
         });
       }
     }
+
+    if (iframeDirty) {
+      if (this.state.reloadIframeOnChange) {
+        this.setState({reloadIframeOnChange: false});
+        this.reloadIframe();
+      } else {
+        console.log(this.state.iframeDirtyChanges);
+        this.setState({iframeDirtyChanges: (this.state.iframeDirtyChanges || 0) + 1});
+      }
+    }
+
   },
   reloadIframe: function() {
     // Add an arbitrary query param to force reload.
     let newUrl = this.state.previewUrlBase + '&_v';
-    logger.debug("Reload iframe!", newUrl);
-    this.setState({previewUrlBase: newUrl});
+    logger.debug(new Date(), "Reload iframe!", newUrl);
+    this.setState({previewUrlBase: newUrl, iframeDirtyChanges: 0});
   },
   resizeIframe: _.debounce(function() {
+    console.log(new Date(), "resizeIframe");
     let container = document.querySelector('.mht-timeline-editor');
     let iframe = document.getElementById("timeline-preview");
     let containerRect = container.getBoundingClientRect();
@@ -188,7 +197,7 @@ const UpdateTimeline = React.createClass({
     });
   },
   clearModal: function(event) {
-    this.setState({modalRowId: undefined});
+    this.setState({modalRowId: undefined, reloadIframeOnChange: true});
   },
   editCurrentSlide: function(event) {
     event.preventDefault();
@@ -260,9 +269,20 @@ const UpdateTimeline = React.createClass({
     // Page store for getting links.
     let ps = this.getStore("PageStore");
 
+    let reloadButton = (
+      <Button bsStyle='warning' className='edit-this reload-iframe' onClick={this.reloadIframe}>
+        <Fa type="refresh" /> {this.state.iframeDirtyChanges} change{this.state.iframeDirtyChanges === 1 ? "" : "s"}; click to reload
+      </Button>
+    );
+    let editThisStoryButton = (
+      <Button className='edit-this' onClick={this.editCurrentSlide}>
+        <Fa type="pencil" /> Edit this story
+      </Button>
+    );
+
     return (
       <div>
-        <Navbar brand='Edit Timeline'>
+        <Navbar brand={`Edit ${this.state.data.title || "Timeline"}`}>
           <Nav>
             <li>
               <span className='linkless-nav-item'>
@@ -309,9 +329,7 @@ const UpdateTimeline = React.createClass({
         </Navbar>
 
         <div className='hidden-xs timeline-preview-holder'>
-          <Button className='edit-this' onClick={this.editCurrentSlide}>
-            <Fa type="pencil" /> Edit this story
-          </Button>
+          { this.state.iframeDirtyChanges ? reloadButton : editThisStoryButton }
           <iframe id='timeline-preview' src={iframeSrc} height={this.state.iframeHeight + "px"} width='100%' frameBorder='0'></iframe>
         </div>
 

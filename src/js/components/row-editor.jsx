@@ -70,7 +70,6 @@ const RowEditor = React.createClass({
       value: this.state.row[attr],
       name: attr,
       onChange: function(event) {
-        console.log("onChange", attr, event);
         // Handle change of an input: set the state, and check dirty.
         if (event.target.value !== this.state.row[attr]) {
           let newRow = _.extend({}, this.state.row);
