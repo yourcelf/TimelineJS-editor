@@ -51,7 +51,6 @@ window.mhtEditor = function(opts) {
   const provideContext = require("fluxible-addons-react/provideContext");
   const createElementWithContext = require("fluxible-addons-react/createElementWithContext");
   const Main = provideContext(require('./components/main.jsx'));
-  console.log(Main);
 
   const app = new Fluxible({
     component: Main,
