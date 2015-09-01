@@ -1,5 +1,5 @@
 "use strict";
-var _ = require("lodash");
+const _ = require("lodash");
 /**
  * Parse url params from the given querystring or URL.
  *
@@ -13,11 +13,11 @@ module.exports.decodeParams = function(query) {
     query = query.split("?")[1];
   }
   query = query.split("#")[0];
-  var match,
+  let match,
       search = /([^&=]+)(=?)([^&]*)/g,
       decode = function (s) { return decodeURIComponent(s.replace(/\+/g, " ")); };
 
-  var params = {};
+  let params = {};
   /* eslint-disable no-cond-assign */
   while (match = search.exec(query)) {
     if (match[2]) {
@@ -57,7 +57,7 @@ module.exports.encodeParams = function(mapping) {
  * defaultValue or undefined if not present.
  */
 module.exports.lsGet = function(key, defaultValue) {
-  var val = window.localStorage && localStorage.getItem(key);
+  let val = window.localStorage && localStorage.getItem(key);
   if (typeof val === "undefined" || val === null) {
     return defaultValue;
   }

@@ -22,7 +22,7 @@ var VERSION = require('./package.json').version;
 var DEST = "./build/"
 
 gulp.task('clean', function(done) {
-  del([DEST], done);
+  del([DEST]).then(function() { done(); });
 });
 
 gulp.task('js', function() {
@@ -34,20 +34,20 @@ gulp.task('js', function() {
     .pipe(source(NAME + ".min.js"))
     .pipe(buffer())
     .pipe(sourcemaps.init({loadMaps: true}))
-    .pipe(uglify())
+    //.pipe(uglify())
     .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest(DEST + "js/"));
 });
 
 gulp.task('timelinejs', function() {
   // filter to append some css to timeline.css
-  var filter = gulpFilter(['css/timeline.css']);
+  var filter = gulpFilter(['css/timeline.css'], {restore: true});
   var extraCss = fs.readFileSync(__dirname + '/src/css/category-colors.css');
 
   return gulp.src(['bower_components/TimelineJS/build/**/*'])
     .pipe(filter) // filters for only css/timeline.css
     .pipe(insert.append(extraCss)) //appends our css to it
-    .pipe(filter.restore()) // restores everything else to the stream
+    .pipe(filter.restore) // restores everything else to the stream
     .pipe(gulp.dest(DEST + "timelinejs/"));
 });
 

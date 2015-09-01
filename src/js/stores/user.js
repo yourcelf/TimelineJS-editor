@@ -1,8 +1,8 @@
 "use strict";
-var createStore = require("fluxible/addons/createStore");
-var goog = require("../goog");
+const createStore = require("fluxible/addons/createStore");
+const goog = require("../goog");
 
-var UserStore = createStore({
+const UserStore = createStore({
   initialize: function() {
     this.token = null;
   },

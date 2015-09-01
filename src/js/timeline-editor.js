@@ -1,8 +1,8 @@
 "use strict";
 /** @module */
 require("es6-promise").polyfill();
-var options = require("./options");
-var _ = require("lodash");
+const options = require("./options");
+const _ = require("lodash");
 
 /**
  * Main entrypoint for bootstrapping the Media History Timeline editor.
@@ -45,24 +45,27 @@ window.mhtEditor = function(opts) {
     options.div = document.getElementById(options.div);
   }
 
-  var React = require('react');
-  var Fluxible = require('fluxible');
-  var Main = require('./components/main.jsx');
-  var actions = require("./actions");
+  const React = require('react');
+  const Fluxible = require('fluxible');
+  const actions = require("./actions");
+  const provideContext = require("fluxible-addons-react/provideContext");
+  const createElementWithContext = require("fluxible-addons-react/createElementWithContext");
+  const Main = provideContext(require('./components/main.jsx'));
+  console.log(Main);
 
-  var app = new Fluxible({appComponent: Main});
-  app.registerStore(require("./stores/user"));
-  app.registerStore(require("./stores/spreadsheet"));
-  app.registerStore(require("./stores/page"));
-  var context = app.createContext();
+  const app = new Fluxible({
+    component: Main,
+    stores: [
+      require("./stores/user"),
+      require("./stores/spreadsheet"),
+      require("./stores/page")
+    ]
+  });
 
-
+  const context = app.createContext();
   // Initialize authorization state with google.
   context.executeAction(actions.authorize, {}, function() {
-    React.render(
-      React.createElement(Main, {context: context.getComponentContext()}),
-      options.div
-    );
+    React.render(createElementWithContext(context), options.div);
   });
 
   window.onpopstate = function() {

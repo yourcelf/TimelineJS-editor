@@ -9,7 +9,7 @@ const TooltipFa = React.createClass({
   render: function() {
     return (
       <OverlayTrigger placement="top"
-                      overlay={<Tooltip>{this.props.title}</Tooltip>}>
+                      overlay={<Tooltip id={'id-' + Math.random()}>{this.props.title}</Tooltip>}>
         <a><Fa type={this.props.type} /></a>
       </OverlayTrigger>
     );

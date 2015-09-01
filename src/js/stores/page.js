@@ -1,11 +1,11 @@
 "use strict";
-var createStore = require("fluxible/addons/createStore");
-var options = require("../options");
-var utils = require("../utils");
-var goog = require("../goog");
-var _ = require("lodash");
+const createStore = require("fluxible/addons/createStore");
+const options = require("../options");
+const utils = require("../utils");
+const goog = require("../goog");
+const _ = require("lodash");
 
-var PageStore = createStore({
+const PageStore = createStore({
   initialize: function() {
     this.urlParams = utils.decodeParams(window.location.search.substring(1));
     this._setPageFromUrlParams();
@@ -80,8 +80,8 @@ var PageStore = createStore({
    * @return {string} URL for the given action and timeline ID.
    */
   getLink: function(action, timelineId) {
-    var set = {};
-    var remove = [];
+    let set = {};
+    let remove = [];
     switch (action) {
       case "URLTEST":
         set[options.timelineParam] = "urltest";
@@ -139,12 +139,12 @@ var PageStore = createStore({
    * @return {string} The url constructed from the given params.
    */
   _buildUrl: function(set, remove) {
-    var params = _.extend({}, this.urlParams, set || {});
+    let params = _.extend({}, this.urlParams, set || {});
     _.each(remove || [], function(r) {
       delete params[r];
     });
-    var querystr = utils.encodeParams(params);
-    var url = window.location.pathname;
+    let querystr = utils.encodeParams(params);
+    let url = window.location.pathname;
     if (querystr) {
       url += "?" + querystr;
     }
@@ -156,7 +156,7 @@ var PageStore = createStore({
    * it to the browser's URL.
    */
   _pushState: function() {
-    var url = this._buildUrl();
+    let url = this._buildUrl();
     if (window.history && window.history.pushState) {
       window.history.pushState(null, null, url);
     } else {

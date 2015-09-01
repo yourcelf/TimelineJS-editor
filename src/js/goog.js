@@ -38,6 +38,53 @@ const COLUMNS = [
   "type", "tag"
 ];
 
+// Convert the given row object from what the Google Spreadsheets API gives us
+// to something a little more readable.
+function _spreadsheetRowToObj(row) {
+  let rowObj = {};
+  COLUMNS.forEach(function(col) {
+    rowObj[col] = row["gsx$" + col].$t;
+  });
+  rowObj.id = row.id.$t;
+  let editLink = _.find(row.link, function(l) { return l.rel === "edit"; });
+  rowObj._version = editLink ? editLink.href : undefined;
+  return rowObj;
+}
+
+// Generate inner <entry> XML for the columns in the given row object.
+function _columnXml(rowObj) {
+  return _.map(COLUMNS, function(column) {
+    return "<gsx:" + column + ">" + _.escape(rowObj[column] || "") + "</gsx:" + column + ">";
+  }).join("\n");
+}
+
+// Wrap the given contents in the namespaced <entry> tags used by the spreadsheet API.
+function _entryXml(contents) {
+  return "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended'>" + contents + "</entry>";
+}
+
+// Return the batch XML for setting a spreadsheet's header. Reference: https://developers.google.com/google-apps/spreadsheets/data#update_multiple_cells_with_a_batch_request
+function _headerRowBatchXML(url) {
+  url = url.replace(spreadsheetsProxyBase, spreadsheetsBase);
+  let entries = _.map(COLUMNS, function(column, i) {
+    return `<entry>
+      <batch:id>A${i + 1}</batch:id>
+      <batch:operation type="update" />
+      <id>${url}/R1C${i + 1}</id>
+      <link rel="edit" type="application/atom+xml" href="${url}/R1C${i + 1}" />
+      <gs:cell row="1" col="${i + 1}" inputValue="${column}" />
+    </entry>`;
+  });
+
+  return `<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:batch="http://schemas.google.com/gdata/batch"
+        xmlns:gs="http://schemas.google.com/spreadsheets/2006">
+    <id>${url}</id>
+    ${entries.join("\n")}
+  </feed>`;
+}
+
+
 
 /**
  * Load the google api script by inserting a script tag into the DOM.
@@ -209,7 +256,7 @@ module.exports.popupLogin = function(redirectUriBase) {
 
 /**
  * Write the header row to a spreadsheet with TimelineJS column values.
- * @param {String} spreadsheetId - The ID of the spreadshet to write to 
+ * @param {String} spreadsheetId - The ID of the spreadshet to write to
  * @param {String} worksheetId - The ID of the worksheet in the spreadsheet to
  * write to
  * @return {Promise} A promise resolving to the HTTP response for the header
@@ -218,7 +265,6 @@ module.exports.popupLogin = function(redirectUriBase) {
 module.exports.writeWorksheetHeader = function(spreadsheetId, worksheetId) {
   let url = URLS.cellsFeed.replace("SPREADSHEET_ID", spreadsheetId)
                           .replace("WORKSHEET_ID", worksheetId);
-  let cellIdMap = {};
   let token = gapi.auth.getToken();
   return new Promise(function(resolve, reject) {
     let xml = _headerRowBatchXML(url);
@@ -401,7 +447,7 @@ module.exports.removeAnyoneCanEdit = function(spreadsheetId) {
  * ``{rows: {Array}, worksheetId: {string}, title: {string}, permissions: {object}``
  */
 module.exports.fetchSpreadsheet = function(spreadsheetId) {
-  var data = {};
+  let data = {};
   return module.exports.getFilePermissions(spreadsheetId).then(function(perms) {
     _.extend(data, perms);
     return module.exports.getWorksheetInfo(spreadsheetId);
@@ -424,7 +470,7 @@ module.exports.fetchSpreadsheet = function(spreadsheetId) {
 module.exports.getFilePermissions = function(fileId) {
   return new Promise(function(resolve, reject) {
     gapi.client.load("drive", "v2", function() {
-      var req = gapi.client.drive.permissions.list({'fileId': fileId});
+      let req = gapi.client.drive.permissions.list({'fileId': fileId});
       req.execute(function(res) {
         return resolve({permissions: res.items});
       });
@@ -440,10 +486,10 @@ module.exports.getFilePermissions = function(fileId) {
  */
 module.exports.getWorksheetInfo = function(spreadsheetId) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
-    var url = URLS.worksheetFeed.replace("SPREADSHEET_ID", spreadsheetId) +
+    let url = URLS.worksheetFeed.replace("SPREADSHEET_ID", spreadsheetId) +
         "?access_token=" + token.access_token + "&alt=json";
 
     superagent.get(url, function(err, res) {
@@ -453,13 +499,13 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
       if (res.status !== 200) {
         return reject(res);
       }
-      var data;
+      let data;
       try {
         data = JSON.parse(res.text);
       } catch (e) {
         return reject(e);
       }
-      var parts = data.feed.entry[0].id.$t.split("/");
+      let parts = data.feed.entry[0].id.$t.split("/");
       resolve({
         worksheetId: parts[parts.length - 1],
         title: data.feed.title.$t
@@ -477,10 +523,10 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
  */
 module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
-    var url = URLS.rowsFeed
+    let url = URLS.rowsFeed
         .replace("SPREADSHEET_ID", spreadsheetId)
         .replace("WORKSHEET_ID", worksheetId) +
         "?access_token=" + token.access_token + "&alt=json";
@@ -489,7 +535,7 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
         return reject(err);
       }
       try {
-        var data = JSON.parse(res.text);
+        let data = JSON.parse(res.text);
         return resolve({rows: _.map(data.feed.entry, _spreadsheetRowToObj)});
       } catch (e) {
         return reject(e);
@@ -497,52 +543,6 @@ module.exports.getWorksheetRows = function(spreadsheetId, worksheetId) {
     });
   });
 };
-
-// Convert the given row object from what the Google Spreadsheets API gives us
-// to something a little more readable.
-function _spreadsheetRowToObj(row) {
-  var rowObj = {};
-  COLUMNS.forEach(function(col) {
-    rowObj[col] = row["gsx$" + col].$t;
-  });
-  rowObj.id = row.id.$t;
-  let editLink = _.find(row.link, function(l) { return l.rel === "edit"; });
-  rowObj._version = editLink ? editLink.href : undefined;
-  return rowObj;
-}
-
-// Generate inner <entry> XML for the columns in the given row object.
-function _columnXml(rowObj) {
-  return _.map(COLUMNS, function(column) {
-    return "<gsx:" + column + ">" + _.escape(rowObj[column] || "") + "</gsx:" + column + ">";
-  }).join("\n");
-}
-
-// Wrap the given contents in the namespaced <entry> tags used by the spreadsheet API.
-function _entryXml(contents) {
-  return "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gsx='http://schemas.google.com/spreadsheets/2006/extended'>" + contents + "</entry>";
-}
-
-// Return the batch XML for setting a spreadsheet's header. Reference: https://developers.google.com/google-apps/spreadsheets/data#update_multiple_cells_with_a_batch_request
-function _headerRowBatchXML(url, cellIdMap) {
-  url = url.replace(spreadsheetsProxyBase, spreadsheetsBase);
-  let entries = _.map(COLUMNS, function(column, i) {
-    return `<entry>
-      <batch:id>A${i + 1}</batch:id>
-      <batch:operation type="update" />
-      <id>${url}/R1C${i + 1}</id>
-      <link rel="edit" type="application/atom+xml" href="${url}/R1C${i + 1}" />
-      <gs:cell row="1" col="${i + 1}" inputValue="${column}" />
-    </entry>`;
-  });
-  
-  return `<feed xmlns="http://www.w3.org/2005/Atom"
-        xmlns:batch="http://schemas.google.com/gdata/batch"
-        xmlns:gs="http://schemas.google.com/spreadsheets/2006">
-    <id>${url}</id>
-    ${entries.join("\n")}
-  </feed>`;
-}
 
 /**
  * Update the spreadsheet with the given changed row.
@@ -553,16 +553,16 @@ function _headerRowBatchXML(url, cellIdMap) {
  */
 module.exports.editSpreadsheetRow = function(rowObj) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
     // Build XML resource.
-    var columns = _columnXml(rowObj);
-    var xmlResource = _entryXml("<id>" + rowObj.id + "</id>" + columns);
+    let columns = _columnXml(rowObj);
+    let xmlResource = _entryXml("<id>" + rowObj.id + "</id>" + columns);
 
     // Find the edit URL.
     // ... but we need to run it through our CORS proxy.
-    var url = rowObj._version.replace(spreadsheetsBase, spreadsheetsProxyBase);
+    let url = rowObj._version.replace(spreadsheetsBase, spreadsheetsProxyBase);
     url += "?alt=json";
 
 
@@ -595,16 +595,16 @@ module.exports.editSpreadsheetRow = function(rowObj) {
  */
 module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
     // We need at least one property to be non-blank.
     if (!rowObj.startdate) {
       rowObj.startdate = moment().format('YYYY-MM-DD');
     }
-    var columns = _columnXml(rowObj);
-    var xmlResource = _entryXml(columns);
-    var url = URLS.rowsFeed
+    let columns = _columnXml(rowObj);
+    let xmlResource = _entryXml(columns);
+    let url = URLS.rowsFeed
         .replace("SPREADSHEET_ID", spreadsheetId)
         .replace("WORKSHEET_ID", worksheetId)
         .replace(spreadsheetsBase, spreadsheetsProxyBase) +
@@ -637,10 +637,10 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
  */
 module.exports.deleteSpreadsheetRow = function(rowObj) {
   return new Promise(function(resolve, reject) {
-    var token = gapi.auth.getToken();
+    let token = gapi.auth.getToken();
     if (!token) { return reject(new Error("Not authenticated")); }
 
-    var url = rowObj._version
+    let url = rowObj._version
       .replace(spreadsheetsBase, spreadsheetsProxyBase) + "?&alt=json";
     superagent.del(url)
         .set("Authorization", "Bearer " + token.access_token)

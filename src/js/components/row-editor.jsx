@@ -1,8 +1,6 @@
 "use strict";
 const _ = require("lodash");
 const React = require("react");
-const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-const PureRenderMixin = require("react/addons").PureRenderMixin;
 const DatePicker = require("./date-picker.jsx");
 const SpreadsheetStore = require("../stores/spreadsheet");
 const actions = require("../actions");
@@ -17,18 +15,23 @@ const CategoryInput = require("./category-input.jsx");
  * React component for a single row's editing form.
  */
 const RowEditor = React.createClass({
-  mixins: [FluxibleMixin, PureRenderMixin],
-  statics: {
-    storeListeners: [SpreadsheetStore]
+  contextTypes: {
+    getStore: React.PropTypes.func.isRequired,
+    executeAction: React.PropTypes.func.isRequired
+  },
+  componentDidMount: function() {
+    this.context.getStore(SpreadsheetStore).addChangeListener(this.onChange);
+  },
+  componentWillUnmount: function() {
+    this.context.getStore(SpreadsheetStore).removeChangeListener(this.onChange);
   },
 
   getInitialState: function() {
-    this.ss = this.getStore("SpreadsheetStore");
     return {row: _.extend({}, this._getRowFromStore())};
   },
 
   _getRowFromStore: function() {
-    return this.ss.getRowById(this.props.rowId);
+    return this.context.getStore(SpreadsheetStore).getRowById(this.props.rowId);
   },
   onChange: function(payload) {
     // If upstream data has changed, check whether our revision has changed.
@@ -56,7 +59,7 @@ const RowEditor = React.createClass({
     // Check if the current state differs from that stored in the
     // SpreadsheetStore.
     let storeRow = this._getRowFromStore();
-    let dirty = this.ss.rowsDiffer(storeRow, this.state.row);
+    let dirty = this.context.getStore(SpreadsheetStore).rowsDiffer(storeRow, this.state.row);
     let update = {dirty: dirty};
     if (!dirty && this.state.saving) {
       update.saving = false;
@@ -104,7 +107,7 @@ const RowEditor = React.createClass({
     // Fire action for EDIT_SPREADSHEET_ROW, sending changes in this.state.row.
     this.setState({saving: true});
     let payload = {action: "CHANGE_ROW", row: this.state.row};
-    this.props.context.executeAction(actions.editSpreadsheet, payload);
+    this.context.executeAction(actions.editSpreadsheet, payload);
     if (this.props.onSave) {
       this.props.onSave();
     }
@@ -115,7 +118,7 @@ const RowEditor = React.createClass({
     /* eslint-disable no-alert */
     if (confirm("Are you sure you want to delete this entry?")) {
       let payload = {action: "DELETE_ROW", row: this.state.row};
-      this.props.context.executeAction(actions.editSpreadsheet, payload);
+      this.context.executeAction(actions.editSpreadsheet, payload);
       if (this.props.onDelete) {
         this.props.onDelete();
       }

@@ -20,7 +20,7 @@ module.exports = {
             console.log(err);
             return reject(err);
           }
-          var data = JSON.parse(res.text).data;
+          let data = JSON.parse(res.text).data;
           return resolve(data.link.replace("http:", "https:"));
         });
     });

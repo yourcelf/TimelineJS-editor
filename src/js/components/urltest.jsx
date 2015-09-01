@@ -1,19 +1,18 @@
 "use strict";
 const React = require("react");
-const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
 const PureRenderMixin = require("react/addons").PureRenderMixin;
 const PageStore = require("../stores/page");
 const options = require("../options");
 
 const UrlTest = React.createClass({
-  mixins: [FluxibleMixin, PureRenderMixin],
-  statics: {storeListeners: [PageStore]},
+  mixins: [PureRenderMixin],
+  contextTypes: {getStore: React.PropTypes.func.isRequired},
   onChange: function(){},
   render: function() {
-    let ps = this.getStore("PageStore");
+    let ps = this.context.getStore("PageStore");
     let redirectUriBase = document.location.protocol + "//" +
                       document.location.host +
-                      this.getStore("PageStore").getLink("OAUTH_REDIRECT_BASE");
+                      ps.getLink("OAUTH_REDIRECT_BASE");
     let joiner = redirectUriBase.indexOf("?") === -1 ? "?" : "&";
     let redirectUri = redirectUriBase + joiner + options.redirectParam;
 

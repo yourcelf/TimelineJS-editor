@@ -1,5 +1,5 @@
 "use strict";
-var goog = require("./goog");
+const goog = require("./goog");
 
 /*
  * For the purposes of our simple app here, actions are mostly just dispatchers
@@ -7,7 +7,7 @@ var goog = require("./goog");
  */
 
 module.exports.authorize = function(context, payload, done) {
-  var finish = function(token) {
+  let finish = function(token) {
     context.dispatch("AUTHORIZE", {token: token});
     if (done) { done(); }
   };

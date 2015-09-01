@@ -1,6 +1,7 @@
 {
   "ecmaFeatures": {
-    "jsx": true
+    "jsx": true,
+    "modules": true
   },
   "env": {
     "browser": true,
@@ -9,8 +10,8 @@
   },
   "rules": {
     "no-unused-vars": [2, {"vars": "all", "args": "none"}],
-    "no-var": true,
-    "no-underscore-dangle": false,
-    "quotes": false
+    "no-var": 2,
+    "no-underscore-dangle": 0,
+    "quotes": 0
   }
 }

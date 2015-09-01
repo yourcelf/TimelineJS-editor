@@ -1,8 +1,8 @@
 "use strict";
-const React = require('react');
-const FluxibleMixin = require('fluxible/addons/FluxibleMixin');
-const PureRenderMixin = require("react/addons").PureRenderMixin;
 const _ = require('lodash');
+const React = require('react');
+const connectToStores = require("fluxible-addons-react/connectToStores");
+
 const PageStore = require('../stores/page');
 const actions = require('../actions');
 const Fa = require("./fa.jsx");
@@ -20,33 +20,22 @@ const getEmbedBaseUrl = function() {
 /**
  * React component for a read-only view of timelines.
  */
-const ReadTimeline = React.createClass({
-  mixins: [FluxibleMixin, PureRenderMixin],
-  statics: {storeListeners: [PageStore]},
-  _getStateFromStores: function() {
-    let ps = this.getStore('PageStore');
-    return {
-      timelineId: ps.getTimelineId(),
-      embedBaseUrl: getEmbedBaseUrl()
-    };
-  },
-  getInitialState: function() {
-    return this._getStateFromStores();
-  },
-  onChange: function() {
-    this.setState(this._getStateFromStores());
+let ReadTimeline = React.createClass({
+  contextTypes: {
+    getStore: React.PropTypes.func.isRequired,
+    executeAction: React.PropTypes.func.isRequired
   },
   handleNavEdit: function() {
-    this.props.context.executeAction(actions.navigate, {
+    this.context.executeAction(actions.navigate, {
       page: 'UPDATE',
-      timelineId: this.state.timelineId
+      timelineId: this.props.timelineId
     });
   },
   handleFocusTextarea: function(event) {
     event.target.select();
   },
   toggleEmbed: function() {
-    this.setState({showEmbed: !this.state.showEmbed});
+    this.setState({showEmbed: !(this.state && this.state.showEmbed)});
   },
   render: function() {
     let encUrl = encodeURIComponent(document.URL);
@@ -62,7 +51,8 @@ const ReadTimeline = React.createClass({
     // We're dangerously-set-inner-html-ifying this so that we can use it both
     // as a TextArea value and as the embed.  So be careful to escape any user
     // input in it (e.g. the timeline ID).
-    let embedCode = `<iframe src='${this.state.embedBaseUrl}?source=${_.escape(this.state.timelineId)}&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>`;
+    let embedCode = `<iframe src='${this.props.embedBaseUrl}?source=${_.escape(this.props.timelineId)}&font=Bevan-PotanoSans&maptype=toner&lang=en&height=650' width='100%' height='650' frameBorder='0'></iframe>`;
+    let showEmbed = this.state && this.state.showEmbed;
 
     return <div>
       <div dangerouslySetInnerHTML={{__html: embedCode}} />
@@ -83,13 +73,13 @@ const ReadTimeline = React.createClass({
       </div>
       <div className='text-center'>
         <button onClick={this.toggleEmbed} className='btn btn-default'>
-          <Fa type={'fw ' + (this.state.showEmbed ? 'caret-down' : 'caret-right')}/>
+          <Fa type={'fw ' + (showEmbed ? 'caret-down' : 'caret-right')}/>
           Embed
         </button>
       </div>
       <div className='text-center clearfix'>
         {
-          this.state.showEmbed ? (
+          showEmbed ? (
             <span>
               <p>Paste this code into your blog or website to embed this timeline there.</p>
               <textarea className='form-control' rows='4' cols='60' value={embedCode}
@@ -104,4 +94,10 @@ const ReadTimeline = React.createClass({
     </div>;
   }
 });
+
+ReadTimeline = connectToStores(ReadTimeline, [PageStore], (context, props) => ({
+  timelineId: context.getStore(PageStore).getTimelineId(),
+  embedBaseUrl: getEmbedBaseUrl()
+}));
+
 module.exports = ReadTimeline;

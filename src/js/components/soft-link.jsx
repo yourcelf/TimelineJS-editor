@@ -9,9 +9,12 @@ const navigateAction = require("../actions").navigate;
  */
 const SoftLink = React.createClass({
   mixins: [PureRenderMixin],
+  contextTypes: {
+    executeAction: React.PropTypes.func.isRequired
+  },
   handleClick: function(event) {
     event.preventDefault();
-    this.props.context.executeAction(navigateAction, {href: this.props.href});
+    this.context.executeAction(navigateAction, {href: this.props.href});
   },
   render: function() {
     return (

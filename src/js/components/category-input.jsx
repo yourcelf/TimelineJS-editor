@@ -4,8 +4,6 @@ const React = require("react");
 const PureRenderMixin = require("react/addons").PureRenderMixin;
 const options = require("../options");
 
-console.log(options);
-
 const CategoryInput = React.createClass({
   mixins: [PureRenderMixin],
   onSelect(event) {

@@ -10,7 +10,7 @@ const Fa = require("./fa.jsx");
 const UrlOrImgurUpload = React.createClass({
   mixins: [PureRenderMixin],
   getInitialState() {
-    var r = Math.random();
+    let r = Math.random();
     return {
       url: this.props.value,
       error: null,
