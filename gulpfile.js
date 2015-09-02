@@ -28,7 +28,7 @@ gulp.task('clean', function(done) {
 gulp.task('js', function() {
   return browserify({
       entries: ['./src/js/timeline-editor.js']
-    })
+    }, {debug: true})
     .transform(babelify)
     .bundle()
     .pipe(source(NAME + ".min.js"))

@@ -31,7 +31,7 @@ const CreateTimeline = React.createClass({
     if (this.state.title && !this.state.templateUrlError) {
       this.setState({disableForm: true});
       let that = this;
-      goog.createSpreadsheet("Timeline: " + this.state.title, this.state.templateId).then(function(spreadsheetId) {
+      goog.createSpreadsheet("Timeline: " + this.state.title, this.state.templateId || options.templateId).then(function(spreadsheetId) {
         that.context.executeAction(actions.setSpreadsheetId, spreadsheetId);
         that.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: spreadsheetId});
         that.setState({disableForm: false});
@@ -96,7 +96,9 @@ const CreateTimeline = React.createClass({
         templateUrlHelp = "Please paste the URL to a google spreadsheet or a timeline hosted on this site.";
         hasError = true;
       } else if (this.state.templateUrl === "") {
-        templateUrlHelp = <span>Leave blank to create a new empty timeline.</span>;
+        templateUrlHelp = <span>
+          If blank, the {' '} <a href={`https://docs.google.com/spreadsheet/ccc?key=${options.templateId}&mode=public`} target='_blank'>default template</a> {' '} will be used.
+        </span>
       }
 
       return (

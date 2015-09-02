@@ -11,6 +11,8 @@
  *     })
  */
 module.exports = {
+  /** Default template ID to use for creating new spreadsheets */
+  templateId: "1BBVcQmmNoxsPoEHrJZJOomorOIdaSDN-09nTZtEknyk",
   /** URL parameter for oauth popups */
   redirectParam: "oauth2callback",
   /** URL parameter for timeline IDs */

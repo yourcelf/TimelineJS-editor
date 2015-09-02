@@ -18,6 +18,9 @@ const _ = require("lodash");
  *  - ``imgurClientId``: {string} (optional). The Imgur application client ID
  *    which authorizes this application to access the Imgur API. If not
  *    present, uploading images from within the timeline will not be possible.
+ *  - ``templateId``: {string} (optional). The ID of the Google Spreadsheet to
+ *    use as template for new timelines. Default:
+ *    "1BBVcQmmNoxsPoEHrJZJOomorOIdaSDN-09nTZtEknyk"
  *  - ``redirectParam``: {string} (optional) The URL parameter to use for OAUTH
  *    redirects from Google. Should be chosen to avoid conflict with the URL
  *    scheme of the page in which the editor is embedded. Must match the URLs

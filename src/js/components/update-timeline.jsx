@@ -74,6 +74,7 @@ const UpdateTimeline = React.createClass({
 
   getPreviewUrlBase(generation) {
     return resolveScriptRelativePath(
+      //`TimelineJS3/compiled/embed/index.html?map_type=osm&lang=en&hash_bookmark=1&_v=${generation}&duration=0`
       `timelinejs/embed/index.html?font=Bevan-PotanoSans&maptype=osm&lang=en&hash_bookmark=1&_v=${generation}`
     );
   },
