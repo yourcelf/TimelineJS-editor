@@ -129,8 +129,6 @@ module.exports.authorize = function() {
       if (authResult) {
         if (authResult.error) {
           console.log("auth: error:", authResult.error);
-        } else {
-          console.log("auth: authenticated");
         }
       } else {
         console.log("auth: none");
@@ -500,6 +498,7 @@ module.exports.getWorksheetInfo = function(spreadsheetId) {
         return reject(res);
       }
       let data;
+      //console.log(res.text);
       try {
         data = JSON.parse(res.text);
       } catch (e) {

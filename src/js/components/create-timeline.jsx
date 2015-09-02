@@ -14,6 +14,9 @@ const Fa = require("./fa.jsx");
  */
 const CreateTimeline = React.createClass({
   mixins: [PureRenderMixin],
+  contextTypes: {
+    executeAction: React.PropTypes.func.isRequired
+  },
   TEMPLATE_URL_PATTERNS: [
     /docs.google.com\/spreadsheet\/.*\?.*key=([^&#]+)/i,
     /docs.google.com\/spreadsheets\/d\/([^\/]+)\/edit/i,
@@ -29,8 +32,8 @@ const CreateTimeline = React.createClass({
       this.setState({disableForm: true});
       let that = this;
       goog.createSpreadsheet("Timeline: " + this.state.title, this.state.templateId).then(function(spreadsheetId) {
-        that.props.context.executeAction(actions.setSpreadsheetId, spreadsheetId);
-        that.props.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: spreadsheetId});
+        that.context.executeAction(actions.setSpreadsheetId, spreadsheetId);
+        that.context.executeAction(actions.navigate, {page: "UPDATE", timelineId: spreadsheetId});
         that.setState({disableForm: false});
       }).catch(function(err) {
         console.log("duplicateTemplate error", err);

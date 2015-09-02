@@ -59,9 +59,11 @@ const SpreadsheetStore = createStore({
           errors: this._fetchErrors,
           message: _.pluck(this._fetchErrors, "message").join("; ")
         };
+        this.emitChange();
       } else {
         console.log(`Fetch error ${this._fetchErrors.length}/2`);
       }
+      return;
     }
     this.error = err;
     this.emitChange();

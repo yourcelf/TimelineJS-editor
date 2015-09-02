@@ -145,12 +145,12 @@ const UpdateTimeline = React.createClass({
       previewUrlBase: newUrl,
       iframeDirtyChanges: 0
     });
-    logger.debug(new Date(), "Reload iframe!", newUrl);
+    logger.debug(new Date(), "reloadIframe", newUrl);
     this.setState({previewUrlBase: newUrl, iframeDirtyChanges: 0});
   },
 
   resizeIframe: _.debounce(function() {
-    console.log(new Date(), "resizeIframe");
+    logger.debug(new Date(), "resizeIframe");
     let container = document.querySelector('.mht-timeline-editor');
     let iframe = document.getElementById("timeline-preview");
     let containerRect = container.getBoundingClientRect();
@@ -261,6 +261,7 @@ const UpdateTimeline = React.createClass({
 
   render() {
     if (this.state.error) {
+      this.context.getStore(SpreadsheetStore).stopPolling();
       return (
         <div>
           <h1>Error</h1>
