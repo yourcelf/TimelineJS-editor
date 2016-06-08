@@ -13,10 +13,15 @@ const DatePicker = React.createClass({
       field: el,
       // onChange doesn't fire with mouse selection; so bind onClose.
       onClose: function() { this.handleOnChange({target: el}); }.bind(this),
+      format: 'MM/DD/YYYY',
       onOpen: function() { this.props.onFocus(); }.bind(this)
     });
   },
   getInitialState: function() {
+    let match = /(\d{4})-(\d{2})-(\d{2})/.exec(this.props.value);
+    if (match) {
+      return {value: `${match[2]}/${match[3]}/${match[1]}`}
+    }
     return {value: this.props.value};
   },
   componentDidMount: function() {

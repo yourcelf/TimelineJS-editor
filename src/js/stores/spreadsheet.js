@@ -181,7 +181,7 @@ const SpreadsheetStore = createStore({
     if (!(str && str.trim && str.trim())) {
       return null;
     }
-    let baseDate = [["MM", "DD", "YY"], ["M", "D", "YYYY"], ["YYYY"], ["YYYY", "MM", "DD"]];
+    let baseDate = [["MM", "DD", "YYYY"], ["MM", "DD", "YY"], ["M", "D", "YYYY"], ["YYYY"], ["YYYY", "MM", "DD"]];
     let baseTime = [["H", "mm", "ss"], ["h", "mm", "ss"], ["H", "mm"], ["h", "mm"]];
     let dateSeparators = ["/", "-"];
     let timeSeparators = [":"];

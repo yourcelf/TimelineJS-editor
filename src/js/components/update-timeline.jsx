@@ -219,7 +219,7 @@ const UpdateTimeline = React.createClass({
       action: "ADD_ROW",
       _requestId: reqId,
       row: {
-        startdate: moment().format("YYYY-MM-DD"),
+        startdate: moment().format("MM/DD/YYYY"),
         headline: us.getName() + "'s story"
       }
     });

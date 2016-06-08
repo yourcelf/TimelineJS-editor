@@ -1,6 +1,6 @@
 {
   "name": "timeline-editor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Editor for TimelineJS timelines",
   "main": "gulpfile.js",
   "directories": {
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/yourcelf/TimelineJS.git"
+    "url": "git://github.com/yourcelf/TimelineJS-editor.git"
   },
   "author": "Charlie DeTar",
   "license": "Mozilla Public License",
   "bugs": {
-    "url": "https://github.com/yourcelf/TimelineJS/issues"
+    "url": "https://github.com/yourcelf/TimelineJS-editor/issues"
   },
-  "homepage": "https://github.com/yourcelf/TimelineJS",
+  "homepage": "https://github.com/yourcelf/TimelineJS-editor",
   "dependencies": {
     "babelify": "^6.3.0",
     "bower": "^1.5.2",

@@ -336,7 +336,7 @@ module.exports.createSpreadsheet = function(title, templateId) {
     } else {
       // Write an example row.
       return module.exports.addSpreadsheetRow(newFileId, worksheetId, {
-        startdate: moment().format('YYYY-MM-DD'),
+        startdate: moment().format('MM/DD/YYYY'),
         headline: "Example entry",
         text: "Delete this entry when you've added more.",
         media: "https://i.imgur.com/PEH4mJW.jpg"
@@ -599,7 +599,7 @@ module.exports.addSpreadsheetRow = function(spreadsheetId, worksheetId, rowObj) 
 
     // We need at least one property to be non-blank.
     if (!rowObj.startdate) {
-      rowObj.startdate = moment().format('YYYY-MM-DD');
+      rowObj.startdate = moment().format('MM/DD/YYYY');
     }
     let columns = _columnXml(rowObj);
     let xmlResource = _entryXml(columns);

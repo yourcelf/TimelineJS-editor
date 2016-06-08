@@ -143,12 +143,12 @@ const RowEditor = React.createClass({
                 <label>Start</label>{' '}
                 <DatePicker {...this.getInputProps("startdate")}
                   className='form-control pick-a-date'
-                  value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("YYYY-MM-DD")}
+                  value={this.state.row._meta.startdateObj && this.state.row._meta.startdateObj.format("MM/DD/YYYY")}
                   />{' '}
                 <label>End</label>{' '}
                 <DatePicker {...this.getInputProps("enddate")}
                   className='form-control pick-a-date'
-                  value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("YYYY-MM-DD")}
+                  value={this.state.row._meta.enddateObj && this.state.row._meta.enddateObj.format("MM/DD/YYYY")}
                   />
               </div>
             </div>
